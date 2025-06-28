@@ -90,7 +90,15 @@ def main():
                     best_params = None # Use default parameters in train_model
 
                 # 5. Model Training
-                model, cv_score = train_model(X_train, y_train, model_type=model_type, params=best_params, cv=config.get('cv_folds'))
+                model, cv_score = train_model(
+                    X_train,
+                    y_train,
+                    model_type=model_type,
+                    params=best_params,
+                    cv=config.get('cv_folds'),
+                    checkpoint_interval=config.get('checkpoint_interval'),
+                    resume=config.get('resume_training'),
+                )
 
                 # 6. Model Evaluation
                 accuracy, roc_auc, precision, recall, f1, conf_matrix = evaluate_model(model, X_test, y_test)

@@ -4,38 +4,104 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import xgboost as xgb
 from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.metrics import accuracy_score, classification_report, roc_auc_score, precision_score, recall_score, f1_score, confusion_matrix
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    roc_auc_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix,
+)
 import logging
 import pickle
 import os
 
+
+class XGBoostCheckpoint(xgb.callback.TrainingCallback):
+    """Callback for saving XGBoost checkpoints."""
+
+    def __init__(self, model_dir, interval, prefix):
+        self.model_dir = model_dir
+        self.interval = interval
+        self.prefix = prefix
+
+    def after_iteration(self, model, epoch, evals_log):
+        if (epoch + 1) % self.interval == 0:
+            os.makedirs(self.model_dir, exist_ok=True)
+            path = os.path.join(self.model_dir, f"{self.prefix}_{epoch + 1}.json")
+            model.save_model(path)
+        return False
+
+
+def _latest_checkpoint(model_dir, prefix):
+    """Return the latest checkpoint path if available."""
+    if not os.path.isdir(model_dir):
+        return None
+    checkpoints = [
+        os.path.join(model_dir, f)
+        for f in os.listdir(model_dir)
+        if f.startswith(prefix)
+    ]
+    if not checkpoints:
+        return None
+    return max(checkpoints, key=os.path.getmtime)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def train_model(X_train, y_train, model_type='DecisionTree', params=None, cv=5, scoring='accuracy', model_dir='model'):
+def train_model(
+    X_train,
+    y_train,
+    model_type='DecisionTree',
+    params=None,
+    cv=5,
+    scoring='accuracy',
+    model_dir='model',
+    checkpoint_interval=None,
+    resume=False,
+):
     """
     Trains and evaluates a machine learning model using cross-validation.
     Saves the trained model to model_dir.
     """
     logging.info(f"Training {model_type} model...")
     if model_type == 'DecisionTree':
-        model = DecisionTreeClassifier(**(params or {})) # Use params if provided, else default
+        model_cls = DecisionTreeClassifier
     elif model_type == 'SVM':
-        model = SVC(**(params or {}), probability=True) # probability=True for ROC AUC
+        model_cls = SVC
     elif model_type == 'RandomForest':
-        model = RandomForestClassifier(**(params or {}))
+        model_cls = RandomForestClassifier
     elif model_type == 'XGBoost':
-        model = xgb.XGBClassifier(**(params or {}))
+        model_cls = xgb.XGBClassifier
     elif model_type == 'LogisticRegression':
-        model = LogisticRegression(**(params or {}))
+        model_cls = LogisticRegression
     else:
         raise ValueError(f"Model type '{model_type}' not supported.")
 
-    cv_scores = cross_val_score(model, X_train, y_train, cv=cv, scoring=scoring)
+    base_model = model_cls(**(params or {}))
+
+    cv_scores = cross_val_score(base_model, X_train, y_train, cv=cv, scoring=scoring)
     logging.info(f"Cross-validation scores ({scoring}): {cv_scores}")
     logging.info(f"Mean CV score ({scoring}): {cv_scores.mean():.4f}")
 
-    model.fit(X_train, y_train) # Fit on the entire training set after CV
+    fit_kwargs = {}
+    callbacks = []
+    if model_type == 'XGBoost':
+        if checkpoint_interval:
+            callbacks.append(
+                XGBoostCheckpoint(model_dir, checkpoint_interval, f"{model_type}_checkpoint")
+            )
+        if resume:
+            ckpt = _latest_checkpoint(model_dir, f"{model_type}_checkpoint")
+            if ckpt:
+                logging.info(f"Resuming from checkpoint {ckpt}")
+                fit_kwargs['xgb_model'] = ckpt
+        if callbacks:
+            fit_kwargs['callbacks'] = callbacks
+
+    model = model_cls(**(params or {}))
+    model.fit(X_train, y_train, **fit_kwargs)  # Fit on the entire training set after CV
 
     os.makedirs(model_dir, exist_ok=True) # Ensure model directory exists
     model_path = os.path.join(model_dir, f'{model_type}_model.pkl')

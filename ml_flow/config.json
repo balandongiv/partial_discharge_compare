@@ -11,5 +11,7 @@
   "test_size": 0.2,
   "val_size": 0.2,
   "random_state": 42,
-  "target_column": "target"
+  "target_column": "target",
+  "checkpoint_interval": null,
+  "resume_training": false
 }

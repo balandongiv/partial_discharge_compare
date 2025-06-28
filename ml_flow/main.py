@@ -39,7 +39,7 @@ def save_executed_combinations(executed_combinations):
 
 def main():
     parser = argparse.ArgumentParser(description="ML Workflow Script")
-    parser.add_argument('--config', type=str, default='config.json', help='Path to configuration JSON file')
+    parser.add_argument('--config', type=str, default='config.yaml', help='Path to configuration YAML file')
     args = parser.parse_args()
 
     # Load configuration using helper function
@@ -47,22 +47,38 @@ def main():
     logging.info("Starting ML Workflow...")
 
     target_column = config.get('target_column')
-    results = [] # List to store results for each configuration
+    results = {}
     executed_combinations = load_executed_combinations() # Load executed combinations from file
 
-    for model_type in config.get('model_types'):
-        for scaling_method in config.get('scaling_methods'):
-            for feature_selection in config.get('feature_selections'):
-                logging.info(f"Current Configuration: Model Type: {model_type}, Scaling Method: {scaling_method}, Feature Selection: {feature_selection}")
+    for dataset in config.get('datasets', []):
+        dataset_name = dataset.get('name')
+        dataset_path = dataset.get('path')
+        label_mapping = dataset.get('label_mapping', {})
+        results[dataset_name] = []
 
-                combination_key = (model_type, scaling_method, feature_selection)
-                if combination_key in executed_combinations:
-                    logging.info(f"Combination {combination_key} already executed. Skipping.")
-                    continue # Skip to the next combination
+        for model_type in config.get('model_types'):
+            for scaling_method in config.get('scaling_methods'):
+                for feature_selection in config.get('feature_selections'):
+                    logging.info(
+                        f"Dataset: {dataset_name} | Model: {model_type} | Scaling: {scaling_method} | Feature Sel: {feature_selection}"
+                    )
 
+                    combination_key = (
+                        dataset_name,
+                        model_type,
+                        scaling_method,
+                        feature_selection,
+                    )
+                    if combination_key in executed_combinations:
+                        logging.info(f"Combination {combination_key} already executed. Skipping.")
+                        continue
 
-                # 1. Load Data
-                df = load_data(dataset_name=config.get('dataset_name'))
+                    # 1. Load Data
+                    df = load_data(
+                        dataset_name=dataset_name,
+                        dataset_path=dataset_path,
+                        label_mapping=label_mapping,
+                    )
 
                 # 2. Feature Selection (optional)
                 if feature_selection == 'featurewiz':
@@ -95,7 +111,7 @@ def main():
                 # 6. Model Evaluation
                 accuracy, roc_auc, precision, recall, f1, conf_matrix = evaluate_model(model, X_test, y_test)
 
-                results.append({
+                results[dataset_name].append({
                     "model_type": model_type,
                     "scaling_method": scaling_method,
                     "feature_selection": feature_selection,

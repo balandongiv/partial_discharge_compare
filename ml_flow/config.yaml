@@ -1,0 +1,29 @@
+# Configuration for ML workflow
+# List of datasets with optional path and label mapping
+# If path is omitted, built-in dataset loader will be used
+# label_mapping maps original labels to new labels (e.g., {0: 'A'})
+datasets:
+  - name: iris
+    path: null
+    label_mapping: {}
+
+model_types:
+  - RandomForest
+  - XGBoost
+  - LogisticRegression
+  - SVM
+
+scaling_methods:
+  - standard
+
+feature_selections:
+  - null
+  - featurewiz
+
+hyperparameter_tuning: true
+n_trials_optuna: 10
+cv_folds: 3
+test_size: 0.2
+val_size: 0.2
+random_state: 42
+target_column: target

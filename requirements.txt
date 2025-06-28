@@ -3,3 +3,4 @@ scikit-learn
 xgboost
 optuna
 featurewiz
+PyYAML

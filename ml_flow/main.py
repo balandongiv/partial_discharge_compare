@@ -1,17 +1,52 @@
-from data_loader import load_data
-from data_processor import preprocess_data
-from model_runner import train_model, evaluate_model
-from parameter_tuner import tune_hyperparameters
-from feature_selector import select_features_featurewiz
-from helper import load_config
-import logging
 import argparse
 import json
+import logging
 import os
+import subprocess
 from datetime import datetime
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def setup_logging(config_path: str) -> None:
+    """Configure root logger to write to timestamped and main log files."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_dir = "logs"
+    os.makedirs(log_dir, exist_ok=True)
+
+    log_file_main = os.path.join(log_dir, "main.log")
+    log_file_timestamp = os.path.join(log_dir, f"main_{timestamp}.log")
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+
+    # Clear existing handlers to avoid duplicate logs when running multiple times
+    if root_logger.handlers:
+        root_logger.handlers.clear()
+
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    file_handler_main = logging.FileHandler(log_file_main)
+    file_handler_main.setFormatter(formatter)
+    file_handler_timestamp = logging.FileHandler(log_file_timestamp)
+    file_handler_timestamp.setFormatter(formatter)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+
+    root_logger.addHandler(file_handler_main)
+    root_logger.addHandler(file_handler_timestamp)
+    root_logger.addHandler(stream_handler)
+
+    # Add experiment metadata to the log header
+    commit_hash = "unknown"
+    try:
+        commit_hash = (
+            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])\
+            .decode().strip()
+        )
+    except Exception:
+        pass
+
+    root_logger.info("Starting experiment")
+    root_logger.info("Config path: %s", config_path)
+    root_logger.info("Git commit hash: %s", commit_hash)
 
 TRACKER_FILE = 'executed_combinations_tracker.json' # File to save executed combinations
 
@@ -41,6 +76,16 @@ def main():
     parser = argparse.ArgumentParser(description="ML Workflow Script")
     parser.add_argument('--config', type=str, default='config.json', help='Path to configuration JSON file')
     args = parser.parse_args()
+
+    setup_logging(args.config)
+
+    # Import modules after logging is configured
+    from data_loader import load_data
+    from data_processor import preprocess_data
+    from model_runner import train_model, evaluate_model
+    from parameter_tuner import tune_hyperparameters
+    from feature_selector import select_features_featurewiz
+    from helper import load_config
 
     # Load configuration using helper function
     config = load_config(args.config)

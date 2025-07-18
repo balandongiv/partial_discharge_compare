@@ -78,3 +78,12 @@ Run all unit tests with:
 python unitest/run_all_test.py
 ```
 
+### Experiment runner
+
+Predefined experiment tracks are available via `experiments.tracks`. Execute all steps for a given dataset using:
+
+```bash
+python -m experiments.tracks run_experiment exp1_featurewiz dataset/contactless_pd_detection
+```
+
+Each track toggles options such as advanced denoising or augmentation as described in the code.

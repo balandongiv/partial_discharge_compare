@@ -1,4 +1,17 @@
 /partial_discharge_project/logs/
 /partial_discharge_project/data/
+/partial_discharge_project/outputs/
+/partial_discharge_project/reports/
+/partial_discharge_project/station_52008/
+/dataset/
+/features/2_feature_engineering/
+/features/3_feature_comb_expansion/
+/features/4_feature_selection/
+/reports/
+/results/
+/models/trained/
+/__pycache__/
+*.pyc
 /.idea/
 /experiment_results.csv
+/partial_discharge_compare/dataset/

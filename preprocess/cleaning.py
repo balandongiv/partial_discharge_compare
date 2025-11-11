@@ -39,7 +39,7 @@ def save_cleaned_signal(x: np.ndarray, station_id: str, sub_dir: str, file_id: s
     out_dir = config.ROOT_DIR / station_id / "data_clean" / sub_dir
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{file_id}.npy"
-    np.save(out_path, x)
+    np.save(out_path, np.asarray(x, dtype=np.float32))
     return out_path
 
 
@@ -64,7 +64,8 @@ def bandpass_filter(x: np.ndarray, low: float, high: float, fs: float) -> np.nda
     """
     nyq = 0.5 * fs
     b, a = butter(4, [low / nyq, high / nyq], btype="band")
-    return filtfilt(b, a, x)
+    filtered = filtfilt(b, a, x)
+    return np.asarray(filtered, dtype=np.float32)
 
 
 def vmd_denoise(x: np.ndarray, **kwargs) -> np.ndarray:
@@ -134,8 +135,8 @@ def advanced_denoise(x: np.ndarray, method: str = "vmd", **kwargs) -> np.ndarray
         The denoised signal.
     """
     if method == "vmd":
-        return vmd_denoise(x, **kwargs)
-    return ewt_denoise(x, **kwargs)
+        return np.asarray(vmd_denoise(x, **kwargs), dtype=np.float32)
+    return np.asarray(ewt_denoise(x, **kwargs), dtype=np.float32)
 
 
 def zscore_normalize(x: np.ndarray) -> np.ndarray:

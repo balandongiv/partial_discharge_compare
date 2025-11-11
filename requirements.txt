@@ -16,3 +16,6 @@ vmdpy
 PyWavelets
 tsaug
 joblib
+feature-engine
+mljar-supervised
+reportlab

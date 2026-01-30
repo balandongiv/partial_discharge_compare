@@ -1,0 +1,101 @@
+% \documentclass[
+% % hidelinks, 
+% a4paper,
+% 11pt
+% ,oneside
+% ]{report} % Please disable the twocolumn later
+
+
+% \usepackage{font/fin} %<- Contains all formatting stuff that require by UMS! 
+
+% % Start graphic package
+% \usepackage{graphicx}
+% \usepackage{booktabs}
+% \newcommand{\plus}{\raisebox{.4\height}{\scalebox{.6}{+}}}
+% %\graphicspath{ {./images/} }}
+% \usepackage{array}
+% \usepackage{longtable}
+% \usepackage[english]{babel}
+% \usepackage{geometry}
+% \geometry{a4paper, margin=1in}
+% \usepackage{booktabs}
+% \usepackage{ragged2e}
+% \usepackage{pdflscape}
+% \usepackage{caption}
+
+\documentclass[
+% hidelinks, 
+a4paper,
+11pt
+,oneside
+]{report} % Please disable the twocolumn later
+\usepackage{font/fin} %<- Contains all formatting stuff that require by UMS!
+\usepackage{amsmath}
+\usepackage{graphicx}
+% \usepackage{cite}
+% \usepackage{apacite}
+% \usepackage{natbib}
+\usepackage{pdflscape} % For landscape pages
+\usepackage{graphicx}  % Needed for proper PDF output
+\usepackage{float}     % Enables [H] float specifier used in chap4/chap5 tables/figures
+\usepackage[utf8]{inputenc}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{rotating}
+\usepackage{geometry}
+% \usepackage{cite}
+% hidelinks, 
+% a4paper,
+% 11pt
+% ,oneside
+% ]{report} % Please disable the twocolumn later
+
+
+ 
+
+% Start graphic package
+\usepackage{graphicx}
+\usepackage{booktabs}
+\newcommand{\plus}{\raisebox{.4\height}{\scalebox{.6}{+}}}
+\graphicspath{ {./images/} }
+
+
+\hyphenation{applicability}
+
+
+\hyphenation{applicability}
+
+
+\begin{document}
+
+% \linenumbers % Please disable this for final printing, but for marking and drafting, or dicussion with your supervisor, enable this
+\include{frontpage}
+% \include{chap0}
+
+\include{chap1}
+\include{chap2}
+% \include{chap2table}
+\include{chap3}
+\include{chap4}
+\include{chap5}
+
+
+\bibliographyAPA
+
+
+% https://www.overleaf.com/project/67971e6b0aa516aff16d8c03
+
+% https://www.overleaf.com/project/67bdd0370c5c77e3c5a28789
+
+
+% \appendix  %  <-- IMPORTANT:  Switch to appendix mode!
+% \include{APPENDICES}
+% \appendixchapter{Supplementary Materials}  %  <-- Use \appendixchapter
+
+% This is the first appendix.
+
+% \appendixsection{Detailed Data}  % <-- Use \appendixsection for sections
+
+\end{document}
+

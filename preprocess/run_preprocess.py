@@ -93,8 +93,15 @@ def _store_station_outputs(result: StationProcessingResult) -> None:
         df = pd.DataFrame(result.records)
         float_cols = [c for c in df.columns if c not in {"station_id", "measurement_id", "sensor", "faultAnnotation", "source"} and df[c].dtype != object]
         df[float_cols] = df[float_cols].astype(np.float32, copy=False)
+        
+        # Append to existing parquet if it exists? 
+        # Actually for npy files we aggregate before calling this, so overwriting is fine for the batch.
+        # But if we run session based, we might overwrite. 
+        # Ideally we should just write what we have.
+        
         df.to_parquet(base_dir / "cleaned_windows.parquet", index=False)
-        np.savez(base_dir / "cleaned_windows.npz", **{k: v for k, v in result.arrays.items()})
+        if result.arrays:
+            np.savez(base_dir / "cleaned_windows.npz", **{k: v for k, v in result.arrays.items()})
 
 
 def _quality_report_from_disk() -> None:
@@ -122,14 +129,18 @@ def _quality_report_from_disk() -> None:
         signal_lengths = None
         if "signal_length" in df.columns:
             signal_lengths = df["signal_length"].to_numpy(dtype=np.float32, copy=False)
+        
+        # Checking values from parquet records if available, otherwise skip deep check to save time
+        # The parquet stores signal as list? Yes.
         for record in df.itertuples(index=False):
             signal = getattr(record, "signal", None)
             if isinstance(signal, (list, np.ndarray)):
                 arr = _ensure_float32(signal)
                 nan_windows += int(np.isnan(arr).any())
                 zero_std_windows += int(np.std(arr) == 0.0)
-                global_min = min(global_min, float(np.min(arr)))
-                global_max = max(global_max, float(np.max(arr)))
+                if arr.size > 0:
+                    global_min = min(global_min, float(np.min(arr)))
+                    global_max = max(global_max, float(np.max(arr)))
         rows.append(
             {
                 "station": station_id,
@@ -270,7 +281,7 @@ def process_session(
         return None
 
     station_id = session.cable_id
-    fs = 1.0
+    fs = 40_000_000.0
 
     all_records: List[Dict[str, Any]] = []
     arrays: Dict[str, np.ndarray] = {}
@@ -300,7 +311,14 @@ def process_session(
         "min_value": min_val if min_val is not math.inf else 0.0,
         "max_value": max_val if max_val is not -math.inf else 0.0,
     }
-    return StationProcessingResult(station_id=station_id, records=all_records, arrays=arrays, stats=stats_summary, source="session")
+    result = StationProcessingResult(station_id=station_id, records=all_records, arrays=arrays, stats=stats_summary, source="session")
+    
+    # Write immediately and clear memory
+    _store_station_outputs(result)
+    result.records = []
+    result.arrays = {}
+    
+    return result
 
 
 def process_npy_file(
@@ -311,8 +329,12 @@ def process_npy_file(
 ) -> Optional[StationProcessingResult]:
     station_id = record.station_id
     signal = io.load_pd_npy(record.file_path)
-    fs = 1.0
-    stats = _segment_and_store(station_id, "RAW", signal, fs, None, force, augment, adv_denoise)
+    fs = 40_000_000.0
+    
+    # Use filename stem as sensor name to ensure uniqueness of intermediate files and windows
+    sensor_name = Path(record.file_path).stem
+    
+    stats = _segment_and_store(station_id, sensor_name, signal, fs, None, force, augment, adv_denoise)
     stats_summary = {
         "windows": stats["windows"],
         "label_counts": {k: int(v) for k, v in stats["label_counts"].items()},
@@ -320,13 +342,20 @@ def process_npy_file(
         "min_value": stats["min_value"],
         "max_value": stats["max_value"],
     }
-    return StationProcessingResult(
+    result = StationProcessingResult(
         station_id=station_id,
         records=stats["records"],
         arrays=stats["arrays"],
         stats=stats_summary,
         source="station",
     )
+    
+    # Do NOT write immediately; return result for aggregation
+    # Also clear arrays to avoid memory overhead in main process, 
+    # as we assume npy files in processed dir are sufficient.
+    result.arrays = {} 
+    
+    return result
 
 
 def run(
@@ -351,11 +380,35 @@ def run(
             delayed(process_npy_file)(rec, force, adv_denoise, augment)
             for rec in tqdm(tasks, desc="stations")
         )
+        
+        # Aggregate results by station
+        station_results: Dict[str, StationProcessingResult] = {}
+        
         for result in results:
             if result is None:
                 continue
-            _store_station_outputs(result)
-            checkpoint.mark_done(result.station_id)
+                
+            sid = result.station_id
+            if sid not in station_results:
+                station_results[sid] = StationProcessingResult(
+                    station_id=sid,
+                    records=[],
+                    arrays={},
+                    stats={"windows": 0},
+                    source="station"
+                )
+            
+            # Merge
+            station_results[sid].records.extend(result.records)
+            # Arrays are empty effectively, but if not:
+            # station_results[sid].arrays.update(result.arrays)
+            
+            checkpoint.mark_done(sid)
+            
+        # Write aggregated results
+        for sid, res in station_results.items():
+            _store_station_outputs(res)
+
         checkpoint.flush()
         _quality_report_from_disk()
         return
@@ -370,7 +423,7 @@ def run(
     for result in results:
         if result is None:
             continue
-        _store_station_outputs(result)
+        # _store_station_outputs(result) # Already stored in worker
         checkpoint.mark_done(result.station_id)
     checkpoint.flush()
     _quality_report_from_disk()

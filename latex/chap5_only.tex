@@ -1,0 +1,36 @@
+\documentclass[
+  a4paper,
+  11pt,
+  oneside
+]{report}
+
+% Reuse the thesis style (includes biblatex backend=biber and adds BibThesis.bib)
+\usepackage{font/fin}
+
+% Keep package parity with main.tex for floats/graphics used in chap4/chap5
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{rotating}
+\usepackage{geometry}
+
+% Import labels from Chapter 4 so \ref{tab:...} in chap5 resolves in this standalone build.
+% Requires an existing chap4.aux (already produced by building main.tex previously).
+\usepackage{xr}
+\externaldocument{chap4}
+
+\begin{document}
+
+% Ensure this renders as "CHAPTER 5" (since chap5 is the 5th chapter in main.tex)
+\setcounter{chapter}{4}
+
+\include{chap5}
+
+% Print bibliography for this chapter-only build (same style as main.tex)
+\bibliographyAPA
+
+\end{document}
+

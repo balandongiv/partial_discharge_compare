@@ -127,10 +127,24 @@ from .logger import get_logger
 import config as app_config
 
 
-def _load_selected_features(station_id: Optional[str] = None) -> tuple[pd.DataFrame, pd.Series]:
-    selected_path = Path("features") / "4_feature_selection" / "selected_features.parquet"
+def _load_selected_features(station_id: Optional[str] = None, track: Optional[str] = None) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
+    """Load selected features from a specific track or default location.
+    
+    Parameters
+    ----------
+    station_id
+        Optional station ID to filter by.
+    track
+        Optional track name (e.g., "mljar_internal", "baseline_all_feats", "featurewiz_corr_xgb").
+        If None, uses the default selected_features.parquet.
+    """
+    if track:
+        selected_path = Path("features") / "4_feature_selection" / "tracks" / track / "selected_features.parquet"
+    else:
+        selected_path = Path("features") / "4_feature_selection" / "selected_features.parquet"
+    
     if not selected_path.exists():
-        raise FileNotFoundError("Selected features file not found. Run feature selection first.")
+        raise FileNotFoundError(f"Selected features file not found at {selected_path}. Run feature selection first.")
     df = pd.read_parquet(selected_path)
     if df.empty:
         raise ValueError("Selected features dataframe is empty.")
@@ -157,11 +171,29 @@ def _compute_roc_auc(y_true: np.ndarray, y_proba: np.ndarray, average: str = "ma
 
 
 def run(station_id: Optional[str], input_path: Path, output_path: Path, run_config: Optional[dict] = None) -> dict:
-    """Train predefined models with cross-validation and persist metrics and artefacts."""
+    """Train predefined models with cross-validation and persist metrics and artefacts.
+    
+    Parameters
+    ----------
+    station_id
+        Optional station ID to filter by.
+    input_path
+        Path to input data (currently unused, kept for API compatibility).
+    output_path
+        Root directory for outputs (currently unused, kept for API compatibility).
+    run_config
+        Optional configuration dict. Can contain:
+        - "track": track name (e.g., "mljar_internal", "baseline_all_feats") to use specific feature selection track.
+                   If not specified, uses default selected_features.parquet.
+    """
     log = get_logger(__name__, log_dir=output_path / "reports")
-    log.info("Starting model training stage")
+    
+    # Get track name from config, default to None (uses default path)
+    track = (run_config or {}).get("track")
+    track_display = track if track else "default"
+    log.info("Starting model training stage (track: %s)", track_display)
 
-    feature_df, target_series, meta_df = _load_selected_features(station_id=station_id)
+    feature_df, target_series, meta_df = _load_selected_features(station_id=station_id, track=track)
     feature_names = list(feature_df.columns)
     X = feature_df.astype(np.float32).to_numpy()
     label_encoder = LabelEncoder()
@@ -220,10 +252,19 @@ def run(station_id: Optional[str], input_path: Path, output_path: Path, run_conf
 
     results_records = []
     metrics_rows = []
-    preds_dir = Path("results")
+    
+    # Use track-specific directory for results if track is specified
+    if track:
+        preds_dir = Path("results") / track
+        models_dir = Path("models") / "trained" / track
+    else:
+        preds_dir = Path("results")
+        models_dir = Path("models") / "trained"
+    
     preds_dir.mkdir(parents=True, exist_ok=True)
-    models_dir = Path("models") / "trained"
     models_dir.mkdir(parents=True, exist_ok=True)
+    log.info("Results will be saved to: %s", preds_dir)
+    log.info("Models will be saved to: %s", models_dir)
 
     for model_name, estimator in models.items():
         log.info("Training model: %s", model_name)

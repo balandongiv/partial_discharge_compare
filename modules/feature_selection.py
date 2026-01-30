@@ -152,40 +152,80 @@ def run(station_id: Optional[str], input_path: Path, output_path: Path, config: 
         log.debug("[%s] Label mapping saved -> %s", track_slug, mapping_path)
 
     # Track 4A – Baseline (All Features)
-    baseline_summary = {"description": "Track 4A Baseline (all engineered features retained)"}
-    _write_track("baseline_all_feats", feature_cols, baseline_summary)
+    # Check if "null" or "Baseline" is in feature_selections; assuming "null" means All Features/Baseline
+    feature_selections = getattr(config, "feature_selections", []) if config else []
+    # If config is a dict (legacy support)
+    if isinstance(config, dict):
+         feature_selections = config.get("feature_selections", [])
+    
+    # Check for Baseline/null
+    run_baseline = False
+    if "null" in feature_selections or "Baseline" in feature_selections:
+         run_baseline = True
+    
+    if run_baseline:
+        baseline_summary = {"description": "Track 4A Baseline (all engineered features retained)"}
+        _write_track("baseline_all_feats", feature_cols, baseline_summary)
+    else:
+        log.info("Skipping Track 4A (Baseline) as it is not in feature_selections.")
 
     # Track 4B – Featurewiz (Correlation pruning + XGB ranking)
-    corr_limit = (config or {}).get("corr_limit", 0.7)
-    fw_selected, _ = featurewiz(
-        fw_input,
-        "target",
-        corr_limit=corr_limit,
-        verbose=0,
-        skip_sulov=False,
-        skip_xgboost=False,
-    )
+    fw_selected = feature_cols  # Default fallback
+    if "featurewiz" in feature_selections:
+        corr_limit = 0.7  # Default
+        # Safe access for config dict/object
+        conf_dict = config.dict() if hasattr(config, "dict") else (config if isinstance(config, dict) else {})
+        if "corr_limit" in conf_dict:
+            corr_limit = conf_dict["corr_limit"]
+        
+        log.info("[Track 4B] Running Featurewiz with corr_limit=%s", corr_limit)
+        fw_selected, _ = featurewiz(
+            fw_input,
+            "target",
+            corr_limit=corr_limit,
+            verbose=0,
+            skip_sulov=False,
+            skip_xgboost=False,
+        )
 
-    if not fw_selected:
-        log.warning("Featurewiz returned no features; falling back to all engineered features for Track 4B")
-        fw_selected = feature_cols
+        if not fw_selected:
+            log.warning("Featurewiz returned no features; falling back to all engineered features for Track 4B")
+            fw_selected = feature_cols
 
-    featurewiz_summary = {
-        "description": "Track 4B Featurewiz (correlation pruning + XGB ranking)",
-        "corr_limit": corr_limit,
-    }
-    _write_track("featurewiz_corr_xgb", fw_selected, featurewiz_summary)
+        featurewiz_summary = {
+            "description": "Track 4B Featurewiz (correlation pruning + XGB ranking)",
+            "corr_limit": corr_limit,
+        }
+        _write_track("featurewiz_corr_xgb", fw_selected, featurewiz_summary)
+    else:
+        log.info("Skipping Track 4B (Featurewiz) as it is not in feature_selections.")
 
-    root_selection_dir = Path("features") / "4_feature_selection"
-    root_selection_dir.mkdir(parents=True, exist_ok=True)
-    root_selected_df = df[meta_cols + fw_selected].copy()
-    numeric_cols_root = [c for c in root_selected_df.columns if c not in meta_cols and np.issubdtype(root_selected_df[c].dtype, np.number)]
-    root_selected_df[numeric_cols_root] = root_selected_df[numeric_cols_root].astype(np.float32, copy=False)
-    root_selected_df.to_parquet(root_selection_dir / "selected_features.parquet", index=False)
-    root_selected_df.to_csv(root_selection_dir / "selected_features.csv", index=False)
+    # Save featurewiz selected features as default (if featurewiz was run)
+    if "featurewiz" in feature_selections:
+        root_selection_dir = Path("features") / "4_feature_selection"
+        root_selection_dir.mkdir(parents=True, exist_ok=True)
+        root_selected_df = df[meta_cols + fw_selected].copy()
+        numeric_cols_root = [c for c in root_selected_df.columns if c not in meta_cols and np.issubdtype(root_selected_df[c].dtype, np.number)]
+        root_selected_df[numeric_cols_root] = root_selected_df[numeric_cols_root].astype(np.float32, copy=False)
+        root_selected_df.to_parquet(root_selection_dir / "selected_features.parquet", index=False)
+        root_selected_df.to_csv(root_selection_dir / "selected_features.csv", index=False)
+        log.info("Saved default selected features (from Featurewiz) -> %s", root_selection_dir / "selected_features.parquet")
 
     # Track 4C – MLJAR-supervised (AutoML with internal selector)
-    mljar_settings = (config or {}).get("mljar", {})
+    # Handle config as dict or Pydantic model
+    if config is None:
+        mljar_settings = {}
+    elif isinstance(config, dict):
+        mljar_settings = config.get("mljar", {})
+    else:
+        # Pydantic model - check if it has mljar attribute or access via dict
+        mljar_settings = getattr(config, "mljar", {}) if hasattr(config, "mljar") else {}
+        if not mljar_settings:
+            try:
+                config_dict = config.dict() if hasattr(config, "dict") else {}
+                mljar_settings = config_dict.get("mljar", {})
+            except (AttributeError, TypeError):
+                mljar_settings = {}
     mljar_track_slug = "mljar_internal"
     mljar_results_dir = selection_root / mljar_track_slug / "automl_results"
     mljar_results_dir.mkdir(parents=True, exist_ok=True)
@@ -209,40 +249,57 @@ def run(station_id: Optional[str], input_path: Path, output_path: Path, config: 
     automl_defaults["validation_strategy"] = validation_strategy
 
     log.info("[Track 4C] Launching MLJAR AutoML with settings: %s", automl_defaults)
-    automl = AutoML(**automl_defaults)
-    automl.fit(feature_df, encoded_target)
-
-    # Attempt to read column importances produced by MLJAR
-    importance_path = mljar_results_dir / "columns_importance.json"
-    importance_threshold = mljar_settings.get("importance_threshold", 0.0)
+    
+    # Initialize variables
+    importance_threshold = mljar_settings.get("importance_threshold", 0.0) if isinstance(mljar_settings, dict) else 0.0
     mljar_selected: list[str]
-
-    if importance_path.exists():
-        try:
-            importance_payload = json.loads(importance_path.read_text(encoding="utf-8"))
-            if isinstance(importance_payload, dict):
-                sorted_items = sorted(
-                    importance_payload.items(), key=lambda item: item[1], reverse=True
-                )
-                mljar_selected = [
-                    feat for feat, score in sorted_items if score is not None and score > importance_threshold
-                ]
-            else:
-                mljar_selected = feature_cols
-                log.warning(
-                    "[Track 4C] Unexpected importance payload structure (%s); defaulting to all features",
-                    type(importance_payload),
-                )
-        except json.JSONDecodeError:
-            log.exception("[Track 4C] Failed to parse columns_importance.json; defaulting to all features")
-            mljar_selected = feature_cols
+    
+    # Check if we have enough samples for MLJAR (need at least 5 for k-fold with k=5)
+    min_samples_required = validation_strategy.get("k_folds", 5) if isinstance(validation_strategy, dict) else 5
+    if len(feature_df) < min_samples_required:
+        log.warning(
+            "[Track 4C] Insufficient samples (%d) for MLJAR with %d-fold CV (need at least %d). "
+            "Skipping MLJAR track and using all features as fallback.",
+            len(feature_df), min_samples_required, min_samples_required
+        )
+        mljar_selected = feature_cols
     else:
-        log.warning("[Track 4C] columns_importance.json not found; defaulting to all features")
-        mljar_selected = feature_cols
+        try:
+            automl = AutoML(**automl_defaults)
+            automl.fit(feature_df, encoded_target)
 
-    if not mljar_selected:
-        log.warning("[Track 4C] Importance filtering removed all features; defaulting to all engineered features")
-        mljar_selected = feature_cols
+            # Attempt to read column importances produced by MLJAR
+            importance_path = mljar_results_dir / "columns_importance.json"
+
+            if importance_path.exists():
+                try:
+                    importance_payload = json.loads(importance_path.read_text(encoding="utf-8"))
+                    if isinstance(importance_payload, dict):
+                        sorted_items = sorted(
+                            importance_payload.items(), key=lambda item: item[1], reverse=True
+                        )
+                        mljar_selected = [
+                            feat for feat, score in sorted_items if score is not None and score > importance_threshold
+                        ]
+                    else:
+                        mljar_selected = feature_cols
+                        log.warning(
+                            "[Track 4C] Unexpected importance payload structure (%s); defaulting to all features",
+                            type(importance_payload),
+                        )
+                except json.JSONDecodeError:
+                    log.exception("[Track 4C] Failed to parse columns_importance.json; defaulting to all features")
+                    mljar_selected = feature_cols
+            else:
+                log.warning("[Track 4C] columns_importance.json not found; defaulting to all features")
+                mljar_selected = feature_cols
+
+            if not mljar_selected:
+                log.warning("[Track 4C] Importance filtering removed all features; defaulting to all engineered features")
+                mljar_selected = feature_cols
+        except Exception as e:
+            log.exception("[Track 4C] MLJAR AutoML failed: %s. Using all features as fallback.", str(e))
+            mljar_selected = feature_cols
 
     mljar_summary = {
         "description": "Track 4C MLJAR-supervised (internal selector + AutoML leaderboard)",
@@ -262,12 +319,15 @@ def run(station_id: Optional[str], input_path: Path, output_path: Path, config: 
 
     _write_track(mljar_track_slug, mljar_selected, mljar_summary)
 
+    tracks_summary = {}
+    if run_baseline:
+        tracks_summary["4A_baseline_all_feats"] = len(feature_cols)
+    if "featurewiz" in feature_selections:
+        tracks_summary["4B_featurewiz_corr_xgb"] = len(fw_selected)
+    tracks_summary["4C_mljar_internal"] = len(mljar_selected)
+    
     summary_payload = {
-        "tracks": {
-            "4A_baseline_all_feats": len(feature_cols),
-            "4B_featurewiz_corr_xgb": len(fw_selected),
-            "4C_mljar_internal": len(mljar_selected),
-        },
+        "tracks": tracks_summary,
         "total_input_features": len(feature_cols),
     }
     log.info("Feature selection summary: %s", summary_payload)

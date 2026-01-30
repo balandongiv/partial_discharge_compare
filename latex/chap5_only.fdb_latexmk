@@ -1,0 +1,12 @@
+# Fdb version 4
+["xdvipdfmx"] 1769704938.21203 "chap5_only.xdv" "chap5_only.pdf" "chap5_only" 1769705347.34611 0
+  "chap5_only.xdv" 0 -1 0 "xelatex"
+  (generated)
+  "chap5_only.pdf"
+  (rewritten before read)
+["xelatex"] 1769706498.82372 "chap5_only.tex" "chap5_only.xdv" "chap5_only" 1769706499.56218 2
+  (generated)
+  "chap5_only.aux"
+  "chap5_only.log"
+  "chap5_only.xdv"
+  (rewritten before read)

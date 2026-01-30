@@ -40,17 +40,28 @@ def _xgb_rank_features(X: pd.DataFrame, y: np.ndarray) -> Sequence[str]:
         return []
     num_classes = int(np.unique(y).size)
     objective = "binary:logistic" if num_classes <= 2 else "multi:softprob"
-    model = XGBClassifier(
-        n_estimators=300,
-        learning_rate=0.05,
-        max_depth=4,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        objective=objective,
-        eval_metric="mlogloss",
-        tree_method="hist",
-        random_state=42,
-    )
+    
+    # Handle small datasets - use fewer estimators and simpler model
+    n_estimators = min(100, max(10, X.shape[0] * 2))
+    max_depth = min(3, max(1, X.shape[0] // 2))
+    
+    model_params = {
+        "n_estimators": n_estimators,
+        "learning_rate": 0.05,
+        "max_depth": max_depth,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "objective": objective,
+        "eval_metric": "mlogloss",
+        "tree_method": "hist",
+        "random_state": 42,
+    }
+    
+    # For binary classification, set base_score to avoid XGBoost error
+    if num_classes <= 2:
+        model_params["base_score"] = 0.5
+    
+    model = XGBClassifier(**model_params)
     model.fit(X, y)
     importances = pd.Series(model.feature_importances_, index=X.columns)
     importances = importances.sort_values(ascending=False)

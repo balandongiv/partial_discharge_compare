@@ -1,0 +1,17 @@
+[
+  {
+    "key": "ctrl+/",
+    "command": "latex-workshop.build",
+    "when": "editorLangId == latex"
+  },
+  {
+    "key": "ctrl+alt+v",
+    "command": "latex-workshop.view",
+    "when": "editorLangId == latex"
+  },
+  {
+    "key": "ctrl+alt+c",
+    "command": "latex-workshop.clean",
+    "when": "editorLangId == latex"
+  }
+]

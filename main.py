@@ -62,7 +62,10 @@ def main(argv: list[str] | None = None) -> None:
     log_file = setup_logging(args.stage)
     logger = logging.getLogger(__name__)
 
-    commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
+    try:
+        commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        commit = "unknown_commit"
     logger.info("--- Experiment Start ---")
     logger.info("Config: %s", config.CONFIG_PATH.resolve())
     logger.info("Git commit: %s", commit)
@@ -70,6 +73,7 @@ def main(argv: list[str] | None = None) -> None:
     logger.info("Flags: %s", vars(args))
     logger.info("------------------------")
 
+    # Stage 0: Preprocessing
     if args.stage in {"preprocess", "full-run"}:
         for ds in config.CONFIG.datasets:
             logger.info("Processing dataset: %s", ds.path)
@@ -83,7 +87,43 @@ def main(argv: list[str] | None = None) -> None:
         if args.stage == "preprocess":
             return
 
-    logger.info("Stage '%s' not yet implemented", args.stage)
+    # Configuration for subsequent stages
+    pipeline_config = {"fs": 40_000_000.0}
+    project_root = config.ROOT_DIR
+
+    # Stage 1: Feature Extraction
+    if args.stage in {"extract", "full-run"}:
+        logger.info("Starting Feature Engineering...")
+        from modules import feature_engineering
+        feature_engineering.run(None, project_root, project_root, config=pipeline_config)
+        
+        logger.info("Starting Feature Expansion...")
+        from modules import feature_expansion
+        feature_expansion.run(None, project_root, project_root)
+        
+        if args.stage == "extract":
+            return
+
+    # Stage 2: Analysis & Modeling
+    if args.stage in {"analyze", "full-run"}:
+        logger.info("Starting Feature Selection...")
+        from modules import feature_selection
+        feature_selection.run(None, project_root, project_root, config=config.CONFIG)
+
+        logger.info("Starting Model Training...")
+        from modules import model_training
+        model_training.run(None, project_root, project_root)
+        
+        if args.stage == "analyze":
+            return
+
+    # Stage 3: Reporting
+    if args.stage in {"report", "full-run"}:
+        logger.info("Starting Evaluation & Reporting...")
+        from modules import evaluation_reporting
+        evaluation_reporting.run(None, project_root, project_root)
+        
+    logger.info("Pipeline Execution Completed.")
 
 
 if __name__ == "__main__":

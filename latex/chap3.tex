@@ -8,9 +8,182 @@ The methodology for partial discharge research generally follows a structured pi
 
 \section{Datasets}
 
-The research on Partial Discharge (PD) analysis and detection is fundamentally driven by data, and this work specifically utilizes a unique dataset from the long-term, on-line monitoring of medium-voltage (MV) overhead power lines. This approach aligns with a growing trend in the field that moves beyond purely laboratory-based experiments to include data captured from in-situ operational equipment, which presents both distinct challenges and opportunities for developing robust diagnostic systems \parencite{Kim_2020_1, Sikorski_2025}. The primary dataset for this research was obtained using a contactless antenna method designed specifically for detecting partial discharges in XLPE-covered conductors. The use of antennas for PD detection is a well-established non-invasive technique that captures the electromagnetic waves radiated by discharge events, allowing for remote monitoring without physical contact with the high-voltage components \parencite{Azam_2024, Cruz_2023}. This radiometric approach is particularly advantageous for monitoring widespread assets like overhead lines, as it circumvents the need for direct sensor installation on every component. Our focus on overhead lines with covered conductors is supported by a significant body of research that has specifically investigated fault detection and PD phenomena in these systems, acknowledging their importance for overall grid reliability and the unique challenges they present \parencite{Chen_2021_2, Zhang_2024_28}. The dataset is characterized by its extensive temporal scope and geographical distribution. It comprises nearly three years of continuous data, collected at one-hour intervals from nine different measuring stations situated in Czechia and Slovakia. Each sample within this dataset is a time-series signal representing a 20-millisecond snapshot of the electromagnetic activity captured by the antenna. This long-term, continuous data acquisition from multiple sites provides a rich source of information, capturing a wide variety of PD signals under diverse environmental and operational conditions. The ability to track pattern evolution over extended periods is crucial for prognostic health management and anomaly detection \parencite{Florkowski_2024, Orellana_2023}. A key strength of our dataset is the availability of reliable ground truth information, which is essential for the development and validation of diagnostic models. The contactless antenna systems were deployed at the same monitoring stations where a traditional galvanic contact method, used by power distribution companies, is also in operation. This parallel measurement provides a direct, industry-accepted reference for confirming PD activity. Furthermore, the dataset has been enhanced with manually curated labels provided by human experts. This expert validation is invaluable for training and assessing the performance of supervised machine learning algorithms, ensuring that the models learn to identify genuine PD events accurately. The availability of such high-quality, labeled data enables the application of various supervised machine learning models, such as Support Vector Machines (SVM) and ensemble methods like Random Forests, to achieve high-accuracy fault detection and classification \parencite{Govindarajan_2021_2}, Sertta? et al., 2020. The large volume of data also necessitates research into efficient data handling, such as novel lossy compression methods and deployment on edge computing devices for real-time, on-site analysis \parencite{Klein_2024}.
+The research on Partial Discharge (PD) analysis and detection is fundamentally
+driven by data, and this work specifically utilizes a unique dataset from the long-term,
+on-line monitoring of medium-voltage (MV) overhead power lines. This approach aligns
+with a growing trend in the field that moves beyond purely laboratory-based exper￾iments to include data captured from in-situ operational equipment, which presents
+both distinct challenges and opportunities for developing robust diagnostic systems Kim
+et al., 2020; Sikorski and Gielniak, 2025.
+The primary dataset for this research was obtained using a contactless antenna
+method designed specifically for detecting partial discharges in XLPE-covered conduc-
+4
+tors. The use of antennas for PD detection is a well-established non-invasive technique
+that captures the electromagnetic waves radiated by discharge events, allowing for re￾mote monitoring without physical contact with the high-voltage components Azam et
+al., 2024; Cruz et al., 2023. This radiometric approach is particularly advantageous for
+monitoring widespread assets like overhead lines, as it circumvents the need for direct
+sensor installation on every component. Our focus on overhead lines with covered con￾ductors is supported by a significant body of research that has specifically investigated
+fault detection and PD phenomena in these systems, acknowledging their importance
+for overall grid reliability and the unique challenges they present K. Chen et al., 2021;
+C. Zhang et al., 2024.
+The dataset is characterized by its extensive temporal scope and geographical dis￾tribution. It comprises nearly three years of continuous data, collected at one-hour
+intervals from nine different measuring stations situated in Czechia and Slovakia. Each
+sample within this dataset is a time-series signal representing a 20-millisecond snapshot
+of the electromagnetic activity captured by the antenna. This long-term, continuous
+data acquisition from multiple sites provides a rich source of information, capturing a
+wide variety of PD signals under diverse environmental and operational conditions. The
+ability to track pattern evolution over extended periods is crucial for prognostic health
+management and anomaly detection Florkowski, 2024; Orellana et al., 2023.
+However, a major challenge inherent in such field-measured data is the high level
+of ambient noise and interference that can obscure the faint PD signals. The mea￾surements are often contaminated with various disturbances, including Gaussian white
+noise, periodic narrowband interference from communication systems, and stochastic
+pulse-shaped interference from other electrical sources Bao et al., 2024; Cao et al., 2025.
+Consequently, robust signal processing, filtering, and denoising techniques are critical
+preliminary steps for any reliable PD detection pipeline, with many studies proposing
+methods based on wavelet transforms, singular value decomposition, or other adaptive
+filtering approaches to suppress interference Sahnoune et al., 2024; Xu et al., 2023.
+A key strength of our dataset is the availability of reliable ground truth informa-
+5
+tion, which is essential for the development and validation of diagnostic models. The
+contactless antenna systems were deployed at the same monitoring stations where a
+traditional galvanic contact method, used by power distribution companies, is also in
+operation. This parallel measurement provides a direct, industry-accepted reference
+for confirming PD activity. Furthermore, the dataset has been enhanced with manually
+curated labels provided by human experts. This expert validation is invaluable for training and assessing the performance of supervised machine learning algorithms, ensuring
+that the models learn to identify genuine PD events accurately. The availability of such
+high-quality, labeled data enables the application of various supervised machine learning
+models, such as Support Vector Machines (SVM) and ensemble methods like Random
+Forests, to achieve high-accuracy fault detection and classification Govindarajan et al.,
+2021; Serttaş and Hocaoǧlu, 2020. The large volume of data also necessitates research
+into efficient data handling, such as novel lossy compression methods and deployment
+on edge computing devices for real-time, on-site analysis Klein et al., 2024
 
-For this study, a multi-domain feature extraction strategy was employed, encompassing descriptors from the time, statistical, frequency, and time-frequency domains. This comprehensive approach aims to construct a robust representation of PD events by capturing the distinct signal characteristics essential for accurate diagnosis by machine learning classifiers \parencite{Lu_2020_2, Masud_2016}. The subsequent sections provide a detailed account of the features calculated for this purpose. The feature that will be used in this are Time-domain feature, Statistical feature, Frequency-Domain Features, Time-frequency Features
+\section{Feature Extraction}
+To facilitate the classification of partial discharge (PD) signals, a critical stage in the
+diagnostic pipeline is the transformation of raw, preprocessed time-series data into a
+concise and discriminative set of numerical features Kumar et al., 2024. For this study,
+a multi-domain feature extraction strategy was employed, encompassing descriptors
+from the time, statistical, frequency, and time-frequency domains. This comprehensive
+approach aims to construct a robust representation of PD events by capturing the distinct
+signal characteristics essential for accurate diagnosis by machine learning classifiers Lu
+et al., 2020; Mas’ud et al., 2016. The subsequent sections provide a detailed account
+of the features calculated for this purpose.
+
+\subsection{Time-Domain Features}
+Time-domain features are derived directly from the individual PD pulse waveforms to
+quantify their fundamental physical properties. These features characterize the shape,
+magnitude, and temporal occurrence of the pulse, which are intrinsically linked to the
+underlying discharge physics and provide crucial information for classification Kumar et
+al., 2024; Lu et al., 2020. The analysis of these characteristics enables the differentiation
+of various PD phenomena based on how the discharge manifests as a transient electrical
+signal Boczar et al., 2017.
+The peak amplitude, signifying the maximum magnitude of the pulse, serves as a
+primary indicator of the discharge intensity and is directly related to the energy released
+during the event K. Zhang et al., 2024. Different PD sources, such as corona, surface
+discharges, or internal voids, often generate pulses with distinct amplitude ranges. This
+makes amplitude a valuable feature for assessing a defect’s severity and for distinguish￾ing between source types, as the physical mechanism and geometry of the defect govern
+the amount of charge mobilized in the discharge Boczar et al., 2017; Martínez-Tarifa et
+al., 2022.
+The pulse rise time, defined as the interval for the signal to increase from 10%
+to 90% of its peak value, reflects the speed of the ionization process Lu et al., 2020.
+PD pulses are characterized by very rapid rise times, often in the nanosecond or sub￾nanosecond range Darwish et al., 2019. This parameter is highly effective for dis￾criminating between PD sources because phenomena such as streamer-like corona dis￾charges exhibit different development speeds compared to Townsend-like discharges in
+internal voids Xavier et al., 2021. Consequently, rise time is a critical feature, though
+it can be affected by signal degradation and dispersion during propagation from the
+source to the sensor Lu et al., 2020.
+Pulse duration, frequently measured as the full width at half maximum (FWHM),
+quantifies the time for which the discharge event persists and is related to the recom￾bination time of charge carriers following the initial ionization Martínez-Tarifa et al.,
+2022. This temporal characteristic is another key descriptor of the pulse shape that aids
+7
+in distinguishing between defect types. Specific discharge mechanisms, influenced by
+factors like gas pressure and electrode geometry, produce characteristically longer or
+shorter pulses, making duration a useful parameter for classification Boczar et al., 2017;
+Uwiringiyimana et al., 2022.
+Finally, the pulse count per cycle tallies the total number of PD events detected
+within one period of the power frequency, directly quantifying the repetition rate and
+activity level of the PD source Gillis et al., 2023. A high pulse count can indicate a more
+active or severe insulation defect, and monitoring this metric is essential for tracking the
+evolution and stability of a fault over time Ma et al., 2021. The number of discharges
+per cycle, along with their phase distribution, is fundamental to forming Phase-Resolved
+Partial Discharge (PRPD) patterns, which are widely used for identifying specific defect
+types Boczar et al., 2017; Kasinathan et al., 2017
+
+\subsection{Statistical Features}
+Statistical features provide a quantitative description of the shape and distribution
+of discharge activity within the Phase-Resolved Partial Discharge (PRPD) pattern. These
+descriptors are derived from the distribution of pulse magnitudes or counts across the
+phase angles of the AC voltage cycle. For this work, the higher-order statistical moments
+of skewness and kurtosis were computed, as they are particularly effective for captur￾ing the nuanced characteristics of PRPD patterns that differentiate various discharge
+phenomena Boczar et al., 2017.
+Skewness measures the degree of asymmetry in the distribution of PD pulses rel￾ative to the center of the phase axis. This feature is valuable because the physical
+mechanisms governing PD can differ significantly between the positive and negative
+half-cycles of the applied voltage, leading to characteristically asymmetric PRPD pat￾terns Boczar et al., 2017. For instance, corona from a sharp point electrode typically
+produces a much higher discharge activity during one polarity of the AC cycle, resulting
+in a highly skewed distribution Yao et al., 2016. By quantifying this asymmetry, skew-
+8
+ness provides a powerful metric for distinguishing between sources like corona, surface,
+and internal void discharges, each of which exhibits unique symmetry properties in its
+PRPD profile Bohari et al., 2021.
+Kurtosis quantifies the ”peakedness” or ”tailedness” of the distribution, indicating
+whether the PD pulses are concentrated within narrow phase windows or are more
+broadly dispersed across the cycle. A high kurtosis value signifies a distribution with
+sharp, narrow peaks and heavy tails, which is characteristic of discharge types that occur only at specific, repeatable moments near the voltage peaks Boczar et al., 2017.
+Conversely, a lower kurtosis suggests a flatter, more uniform distribution of pulses.
+Since different insulation defects generate discharges with distinct phase concentrations, kurtosis serves as a key feature for identifying the nature of the PD source by
+characterizing the shape of its statistical distribution Kunicki et al., 2018. Together,
+these statistical moments transform the qualitative visual information of a PRPD pattern into a compact and discriminative numerical feature vector suitable for automated
+classification Bohari et al., 2021
+
+\subsection{Frequency-Domain Features}
+requency-domain analysis is employed to investigate the spectral composition of
+partial discharge signals, which provides critical diagnostic information not apparent in
+the time domain. By applying a Fast Fourier Transform (FFT) to each captured wave￾form, the signal is converted from its temporal representation to its constituent frequen￾cies X. Li et al., 2018. The significance of this analysis lies in the fact that PD pulses
+are inherently fast, transient events with rapid rise times, meaning they are broadband
+phenomena containing significant energy across a wide spectrum that can extend into
+the High Frequency (HF), Very High Frequency (VHF), and Ultra-High Frequency (UHF)
+ranges Darwish et al., 2019.
+The frequency signature of a measured PD signal is shaped by two key factors:
+the physical nature of the discharge source and the propagation path the electromag-
+9
+netic wave travels to the sensor Azirani et al., 2021. The equipment itself, such as
+a power transformer or a Gas-Insulated Switchgear (GIS) enclosure, acts as a complex waveguide, causing frequency-dependent attenuation and reflection that alters the
+signal’s spectral characteristics Promwong and Tiengthong, 2020. Consequently, the
+energy distribution across different frequency bands becomes a unique fingerprint for a
+specific defect type within a given apparatus.
+Different types of insulation defects are known to manifest distinctively in the frequency domain. The UHF band (300 MHz–3 GHz) is particularly valuable for PD detection in transformers and GIS, as signals in this range can propagate efficiently within
+the metallic enclosures while being less susceptible to external corona and broadcast
+interference Salah et al., 2022. For instance, the spectral content of UHF signals can be
+analyzed to diagnose and distinguish between specific fault types in GIS, such as those
+caused by free-moving particles or fixed protrusions on conductors Ren et al., 2021.
+Selecting an optimal frequency band for analysis is therefore crucial for maximizing the
+signal-to-noise ratio and detection sensitivity Azirani et al., 2021. For this study, the
+spectral power was computed within the distinct HF, VHF, and UHF bands to create a
+feature that captures this discriminative energy distribution, providing a robust basis for
+classification Maneerot et al., 2019.
+
+\subsection{Time-Frequency Features}
+Partial discharge signals are fundamentally transient and non-stationary phenom￾ena, meaning their frequency content evolves rapidly over their short duration. This
+characteristic makes time-frequency analysis methods, which can capture both tempo￾ral and spectral information simultaneously, particularly well-suited for their characteri￾zation X. Li et al., 2018. Among these methods, the Discrete Wavelet Transform (DWT)
+is exceptionally effective and widely employed in PD analysis for its dual capability of
+signal denoising and feature extraction Lu et al., 2020. The DWT decomposes a sig￾nal into various frequency sub-bands at different resolutions, allowing for the effective
+10
+isolation of PD-related components from background noise and interference Sahnoune
+et al., 2024. The efficacy of the DWT is highly dependent on the choice of the mother
+wavelet, as its shape should ideally correlate with the morphology of the PD pulses being analyzed to achieve optimal decomposition Sahnoune et al., 2024. For this study,
+the Daubechies 4 (db4) wavelet was selected. The Daubechies family of wavelets is
+frequently chosen for its properties of compact support and orthogonality, and the db4
+wavelet, in particular, has been demonstrated in the literature to be effective for the
+denoising and analysis of PD signals, thereby representing an established and validated
+choice Wang et al., 2020. The signal was decomposed into four levels, which separates
+the signal into a series of detail coefficients representing successively narrower highfrequency bands, and a final approximation coefficient representing the low-frequency
+content. For feature extraction, the energy of the detail coefficients at each of the four
+decomposition levels was calculated. The resulting four-dimensional vector of wavelet
+energies serves as a powerful feature set. This approach is justified because the energy
+of the coefficients at a specific level quantifies the intensity of the signal within that
+particular frequency band Yang et al., 2024. Since different types of PD sources (e.g.,
+surface, corona, void) generate pulses with distinct spectral signatures, their energy is
+distributed differently across these frequency bands Gao et al., 2023. Therefore, the
+vector of wavelet energies creates a compact and highly discriminative signature that
+effectively characterizes the unique time-frequency energy distribution of a PD event,
+making it an excellent input for machine learning classifiers Yang et al., 2024.
 
 \section{Classification and Cross-Validation}
 
@@ -18,7 +191,57 @@ This section outlines the classification algorithms employed in this study and t
 
 \subsection{Algorithm Selection and Justification}
 
-We checked for problems in electrical insulation by studying the signals from tiny sparks, known as partial discharges. To do this, we used five different computer models to analyze the spark signals and identify the type of insulation problem. We chose a variety of models to see which method would work best. A Support Vector Machine (SVM) was used because this model is very good at finding the best possible line to divide one type of problem from another, even when the data is complicated. A Random Forest model was also used. This method builds many simple decision flowcharts and then gets them to vote on the answer. This "teamwork" approach makes it more accurate and reliable. The K-Nearest Neighbors (KNN) model works by finding the most similar examples from the past. It assumes a new problem is the same type as its closest "neighbors." We used a single Decision Tree because it is very easy to understand. It creates a straightforward flowchart with a series of basic "if-this-then-that" questions to figure out the problem. Finally, an Artificial Neural Network (ANN), a model inspired by the human brain, was included. We used it because it is excellent at finding very complex and hidden patterns in the data that other models might miss.
+This study implemented and compared a curated set of five supervised machine
+learning algorithms to diagnose insulation defects based on the extracted partial dis￾charge features. The selected models represent a diverse range of classification strate￾gies, from kernel-based methods and tree-based ensembles to instance-based and neu￾ral network approaches, ensuring a comprehensive comparative analysis.
+This study implemented and compared a curated set of five supervised machine
+learning algorithms to diagnose insulation defects based on the extracted partial dis￾charge features. The selected models represent a diverse range of classification strate￾gies, from kernel-based methods and tree-based ensembles to instance-based and neu￾ral network approaches, ensuring a comprehensive comparative analysis.
+The Support Vector Machine (SVM) was included for its capacity to construct op￾timal decision boundaries in high-dimensional feature spaces. By mapping features to
+a higher dimension and identifying a separating hyperplane that maximizes the mar￾gin between classes, the SVM can effectively model complex decision boundaries. Its
+application in PD diagnostics spans numerous detection modalities; it has been used
+to identify ultra-high-frequency (UHF) signals in Gas-Insulated Switchgear (GIS) from
+moment-based features Bin et al., 2020 and to localize PD sources when integrated with
+image processing workflows X. Li et al., 2019.
+This adaptability makes the SVM a valuable tool for PD analysis across different
+insulation systems and data types. Research has documented its use for classifying dis￾charges in traditional oil-paper insulation systems Woon et al., 2016 and for interpreting
+abstract feature sets, such as those derived from the fractal analysis of PD images Basha￾ran et al., 2018. A comparative study by Dobrzycki et al. (2019) further underscores
+its utility by evaluating it alongside ANNs for the detection of acoustic emission sig￾nals accompanying electrical treeing, confirming its relevance in multi-modal diagnostic
+scenarios Dobrzycki et al., 2019.
+As a representative of ensemble learning, the Random Forest classifier was imple￾mented. This algorithm constructs a multitude of decision trees during training and
+12
+outputs the mode of their individual predictions, a process that inherently mitigates the
+risk of overfitting to the noisy and variable measurements typical of PD phenomena. Its
+direct application in the acoustic identification of PD sources in power equipment illus￾trates its foundational value in this field Zhu et al., 2025. The model’s integration with
+advanced signal processing, such as using the S-Transform to analyze optical sensor
+data for PD location, points to its role within more sophisticated diagnostic frameworks
+Bag et al., 2019. The development of specialized variants, like hypergraph-based Ran￾dom Forest algorithms, further highlights its established position in improving PD pattern
+classification Govindarajan et al., 2021.
+The K-Nearest Neighbors (KNN) algorithm offers a non-parametric, instance-based
+learning approach. Its core principle—classifying a data point based on the majority
+class of its nearest neighbors—avoids making prior assumptions about the underlying
+data distribution. This is a key justification for its inclusion, as the statistical properties
+of PD signals from different insulation defects are often complex and unknown Lu et
+al., 2020. Its application has been demonstrated for the robust classification of partial
+discharges in various insulation systems Woon et al., 2016. Beyond direct classification,
+its logic has been integrated into more intricate diagnostic systems, such as matching
+new PD data within a case-based reasoning framework for GIS fault analysis Dai et al.,
+2019.
+To establish an interpretable benchmark, a single Decision Tree classifier was im￾plemented. The primary value of this model in an engineering diagnostic context is
+its transparent, hierarchical structure, which renders the classification logic as a set of
+explicit, human-readable rules Lee and Horng, 2020. This interpretability is critical for
+validating diagnostic outcomes and justifying maintenance actions. While a single tree
+can be less robust than ensemble methods, it serves two vital functions: it provides a
+clear performance baseline, as seen in transformer fault diagnosis studies Maseko et al.,
+2025, and it constitutes the fundamental building block for the more complex Random
+Forest classifier Prabhu et al., 2016.
+Finally, an Artificial Neural Network (ANN) was included to model the complex, non-
+13
+linear relationships inherent in PD phenomena. As computational models capable of
+learning intricate patterns from data, ANNs are essential for capturing the link between
+a measured signal and its underlying physical defect. A comprehensive survey by Mas’ud
+et al. (2016) confirms their well-established role in PD recognition Mas’ud et al., 2016.
+The breadth of their applicability is captured in studies that assess their performance in
+various contexts, from diagnosing PD in motor stator windings Y.-T. Chen et al., 2018 to
+identifying defect patterns in cables under DC stress Khan and Koo, 2017.
 
 \subsection{Model Validation Strategy}
 

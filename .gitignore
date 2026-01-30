@@ -60,3 +60,5 @@ latex/xelatex20328.fls
 outputs/
 latex/graphic/mljar_result1.png
 latex/BibThesis.bib.backup
+latex/main.tex
+mock_dataset/

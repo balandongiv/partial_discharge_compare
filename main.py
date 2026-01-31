@@ -119,9 +119,9 @@ def main(argv: list[str] | None = None) -> None:
 
     # Stage 3: Reporting
     if args.stage in {"report", "full-run"}:
-        logger.info("Starting Evaluation & Reporting...")
-        from modules import evaluation_reporting
-        evaluation_reporting.run(None, project_root, project_root)
+        logger.info("Starting Reporting & Experiment Management...")
+        import step5_reporting
+        step5_reporting.run_reporting(project_root)
         
     logger.info("Pipeline Execution Completed.")
 

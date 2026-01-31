@@ -742,11 +742,10 @@
 % Command to print bibliography in APA style
 \newcommand{\bibliographyAPA}{%
     \clearpage
-    \begin{singlespace} % Single-spaced bibliography environment
-        \setstretch{1} % Ensure single spacing within bibliography
-        \smallskip
-        \printbibliography[heading=mybibheading, title=BIBLIOGRAPHY] % Print bibliography with custom heading
-    \end{singlespace}
+    \singlespacing % Single-spaced bibliography
+    \setstretch{1} % Ensure single spacing within bibliography
+    \smallskip
+    \printbibliography[heading=mybibheading, title=BIBLIOGRAPHY] % Print bibliography with custom heading
     \addcontentsline{toc}{chapter}{BIBLIOGRAPHY} % Add bibliography to Table of Contents
 }
 

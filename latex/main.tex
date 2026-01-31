@@ -38,12 +38,12 @@ a4paper,
 \usepackage{pdflscape} % For landscape pages
 \usepackage{graphicx}  % Needed for proper PDF output
 \usepackage{float}     % Enables [H] float specifier used in chap4/chap5 tables/figures
-\usepackage[utf8]{inputenc}
+% \usepackage[utf8]{inputenc} % Not needed with XeLaTeX - XeLaTeX handles UTF-8 by default
 \usepackage{longtable}
-\usepackage{array}
-\usepackage{booktabs}
+% \usepackage{array} % Already loaded in fin.sty
+% \usepackage{booktabs} % Already loaded in fin.sty
 \usepackage{rotating}
-\usepackage{geometry}
+% \usepackage{geometry} % Already loaded in fin.sty
 % \usepackage{cite}
 % hidelinks, 
 % a4paper,
@@ -55,8 +55,8 @@ a4paper,
  
 
 % Start graphic package
-\usepackage{graphicx}
-\usepackage{booktabs}
+% \usepackage{graphicx} % Already loaded above
+% \usepackage{booktabs} % Already loaded in fin.sty
 \newcommand{\plus}{\raisebox{.4\height}{\scalebox{.6}{+}}}
 \graphicspath{ {./images/} }
 
@@ -68,17 +68,16 @@ a4paper,
 
 
 \begin{document}
-saya
 % \linenumbers % Please disable this for final printing, but for marking and drafting, or dicussion with your supervisor, enable this
 % \include{frontpage}
 % \include{chap0}
 
-% \include{chap1}
-% %\include{chap2}
+\include{chap1}
+\include{chap2}
 % \include{chap2table}
-% \include{chap3}
-%\include{chap4}
-%\include{chap5}
+\include{chap3}
+\include{chap4}
+\include{chap5}
 
 
 \bibliographyAPA

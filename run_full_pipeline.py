@@ -50,6 +50,7 @@ from typing import Any, Dict, List, Optional
 import joblib
 import numpy as np
 import pandas as pd
+import yaml
 from scipy import stats
 from scipy.signal import butter, filtfilt, stft
 from sklearn.base import clone
@@ -97,36 +98,104 @@ except ImportError:
 # CONFIGURATION
 # =============================================================================
 
+PIPELINE_PATHS_FILE = Path(__file__).parent.resolve() / "run_full_pipeline.yaml"
+
+
+def _normalize_user_path(value: str) -> Path:
+    """Normalize a user-provided path string into a Path."""
+    cleaned = value.strip().strip('"').strip("'")
+    return Path(cleaned).expanduser()
+
+
+def _prompt_for_path(prompt: str, default: Path, must_exist: bool) -> Path:
+    """Prompt the user for a path, falling back to a default value."""
+    while True:
+        response = input(f"{prompt} [{default}]: ").strip()
+        if not response:
+            candidate = default
+        else:
+            candidate = _normalize_user_path(response)
+
+        if must_exist and not candidate.exists():
+            print(f"[ERROR] Path not found: {candidate}")
+            continue
+        return candidate
+
+
+def _load_pipeline_paths(config_path: Path, project_root: Path) -> Dict[str, Path]:
+    """Load dataset/output roots from YAML, prompting the user on first run."""
+    data: Dict[str, Any] = {}
+    if config_path.exists():
+        try:
+            loaded = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                data = loaded
+        except yaml.YAMLError as exc:
+            print(f"[WARNING] Failed to parse {config_path}: {exc}")
+
+    dataset_root_raw = str(data.get("dataset_root", "")).strip()
+    output_root_raw = str(data.get("output_root", "")).strip()
+
+    needs_prompt = not dataset_root_raw or not output_root_raw
+    if needs_prompt:
+        print("\nFirst run: please provide dataset and output locations.")
+        default_dataset = project_root / "dataset"
+        default_output = project_root
+        dataset_root = _prompt_for_path("Dataset root folder", default_dataset, must_exist=True)
+        output_root = _prompt_for_path("Output base folder", default_output, must_exist=False)
+        output_root.mkdir(parents=True, exist_ok=True)
+
+        config_payload = {
+            "dataset_root": dataset_root.resolve().as_posix(),
+            "output_root": output_root.resolve().as_posix(),
+        }
+        config_path.write_text(
+            yaml.safe_dump(config_payload, sort_keys=False),
+            encoding="utf-8",
+        )
+        print(f"[INFO] Saved pipeline paths to {config_path}")
+    else:
+        dataset_root = _normalize_user_path(dataset_root_raw)
+        output_root = _normalize_user_path(output_root_raw)
+
+    return {
+        "dataset_root": dataset_root.resolve(),
+        "output_root": output_root.resolve(),
+    }
+
+
 class PipelineConfig:
     """Central configuration for the pipeline."""
-    
-    # Paths
-    PROJECT_ROOT = Path(__file__).parent.resolve()
-    DATASET_ROOT = PROJECT_ROOT / "dataset"
-    RAW_DATA_DIR = DATASET_ROOT / "contactless_pd_detection"
-    ANNOTATION_FILE = DATASET_ROOT / "inferred_annotation.csv"
-    
-    # Output directories
-    OUTPUT_ROOT = PROJECT_ROOT / "outputs" / "preprocessing"
-    FEATURES_ROOT = PROJECT_ROOT / "features"
-    MODELS_DIR = PROJECT_ROOT / "models" / "trained"
-    RESULTS_DIR = PROJECT_ROOT / "results"
-    REPORTS_DIR = PROJECT_ROOT / "reports"
-    
-    # Signal processing parameters
-    SAMPLING_FREQ = 1_000_000.0  # 1 MHz
-    BANDPASS_LOW = 1e3           # 1 kHz
-    BANDPASS_HIGH = 450_000.0    # 450 kHz (45% of fs)
-    
-    # Feature selection
-    CORR_LIMIT = 0.7  # Correlation limit for featurewiz
-    
-    # Model training
-    RANDOM_STATE = 42
-    N_JOBS = -1  # Use all cores
-    
-    # Models to train (SVM, RF, DT, ANN, KNN only - as requested)
-    MODELS_TO_TRAIN = ["svm", "random_forest", "decision_tree", "knn", "ann"]
+
+    def __init__(self, dataset_root: Path, output_root: Path, project_root: Optional[Path] = None) -> None:
+        # Paths
+        self.PROJECT_ROOT = project_root or Path(__file__).parent.resolve()
+        self.DATASET_ROOT = dataset_root
+        self.RAW_DATA_DIR = self.DATASET_ROOT / "contactless_pd_detection"
+        self.ANNOTATION_FILE = self.DATASET_ROOT / "inferred_annotation.csv"
+
+        # Output directories (relative to output_root)
+        self.OUTPUT_BASE = output_root
+        self.OUTPUT_ROOT = self.OUTPUT_BASE / "outputs" / "preprocessing"
+        self.FEATURES_ROOT = self.OUTPUT_BASE / "features"
+        self.MODELS_DIR = self.OUTPUT_BASE / "models" / "trained"
+        self.RESULTS_DIR = self.OUTPUT_BASE / "results"
+        self.REPORTS_DIR = self.OUTPUT_BASE / "reports"
+
+        # Signal processing parameters
+        self.SAMPLING_FREQ = 1_000_000.0  # 1 MHz
+        self.BANDPASS_LOW = 1e3           # 1 kHz
+        self.BANDPASS_HIGH = 450_000.0    # 450 kHz (45% of fs)
+
+        # Feature selection
+        self.CORR_LIMIT = 0.7  # Correlation limit for featurewiz
+
+        # Model training
+        self.RANDOM_STATE = 42
+        self.N_JOBS = -1  # Use all cores
+
+        # Models to train (SVM, RF, DT, ANN, KNN only - as requested)
+        self.MODELS_TO_TRAIN = ["svm", "random_forest", "decision_tree", "knn", "ann"]
 
 
 # =============================================================================
@@ -1240,7 +1309,13 @@ def run_full_pipeline():
     
     This is the main entry point - just run this file!
     """
-    config = PipelineConfig()
+    project_root = Path(__file__).parent.resolve()
+    paths = _load_pipeline_paths(PIPELINE_PATHS_FILE, project_root)
+    config = PipelineConfig(
+        dataset_root=paths["dataset_root"],
+        output_root=paths["output_root"],
+        project_root=project_root,
+    )
     
     # Setup logging
     logger = setup_logging(config.REPORTS_DIR)
@@ -1254,6 +1329,7 @@ def run_full_pipeline():
     logger.info("Pipeline started")
     logger.info(f"Project root: {config.PROJECT_ROOT}")
     logger.info(f"Dataset path: {config.DATASET_ROOT}")
+    logger.info(f"Output base: {config.OUTPUT_BASE}")
     
     results = {}
     

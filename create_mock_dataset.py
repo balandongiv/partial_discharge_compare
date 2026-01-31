@@ -1,193 +1,235 @@
 """
-Script to create a mock dataset for partial discharge classification.
+Create a mock raw dataset compatible with run_full_pipeline.py.
 
-Creates:
-- 10 samples with faultAnnotation=1 (fault present)
-- 10 samples with faultAnnotation=0 (no fault)
-- Synthetic PD-like signals in .npy format
-- Annotation CSV matching the expected format
+This script generates a dataset that mirrors the real layout:
+<dataset_root>/
+  contactless_pd_detection/
+    station_<ID>/
+      <measurement_id>.npy
+  inferred_annotation.csv
+
+Each .npy is a 1D int8 signal and the annotation CSV includes:
+idStation, idMeasurement, faultAnnotation, timeStamp
 """
+
+from __future__ import annotations
+
+import argparse
+import random
+import shutil
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from datetime import datetime, timedelta
-import random
 
-# Set random seed for reproducibility
-np.random.seed(42)
-random.seed(42)
-
-# Configuration
-MOCK_DATASET_DIR = Path("mock_dataset")
-STATION_ID = "mock001"
-STATION_DIR = MOCK_DATASET_DIR / "contactless_pd_detection" / f"station_{STATION_ID}"
-ANNOTATION_FILE = MOCK_DATASET_DIR / "inferred_annotation.csv"
-
-# Signal parameters
-SAMPLING_FREQ = 1_000_000  # 1 MHz sampling rate
-SIGNAL_LENGTH = 10000  # 10 ms at 1 MHz (10000 samples)
-BASE_STATION_ID = 99999  # Use a distinct station ID for mock data
+DEFAULT_SIGNAL_LENGTH = 800_000
+DEFAULT_SAMPLING_FREQ = 1_000_000
+DEFAULT_STATIONS = 2
+DEFAULT_SAMPLES_PER_CLASS = 6
+DEFAULT_START_STATION_ID = 90001
+DEFAULT_SEED = 42
 
 
-def generate_pd_pulse(
-    amplitude: float,
-    center_freq: float,
-    pulse_width: float,
-    noise_level: float = 0.1,
-    fs: float = SAMPLING_FREQ,
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser."""
+    parser = argparse.ArgumentParser(
+        description="Create a mock raw dataset compatible with run_full_pipeline.py.",
+    )
+    parser.add_argument(
+        "--output-root",
+        type=Path,
+        default=Path("mock_dataset"),
+        help="Destination root folder for the mock dataset.",
+    )
+    parser.add_argument(
+        "--stations",
+        type=int,
+        default=DEFAULT_STATIONS,
+        help="Number of station folders to generate.",
+    )
+    parser.add_argument(
+        "--samples-per-class",
+        type=int,
+        default=DEFAULT_SAMPLES_PER_CLASS,
+        help="Samples per class (fault=1 and fault=0) per station.",
+    )
+    parser.add_argument(
+        "--signal-length",
+        type=int,
+        default=DEFAULT_SIGNAL_LENGTH,
+        help="Signal length in samples (1D array).",
+    )
+    parser.add_argument(
+        "--sampling-freq",
+        type=int,
+        default=DEFAULT_SAMPLING_FREQ,
+        help="Sampling frequency used for synthetic signal generation.",
+    )
+    parser.add_argument(
+        "--start-station-id",
+        type=int,
+        default=DEFAULT_START_STATION_ID,
+        help="Starting numeric station id; increments by 1 per station.",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=DEFAULT_SEED,
+        help="Random seed for reproducibility.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite the output folder if it already exists.",
+    )
+    return parser
+
+
+def _ensure_output_root(output_root: Path, force: bool) -> None:
+    """Prepare the output directory."""
+    if output_root.exists() and force:
+        shutil.rmtree(output_root)
+    output_root.mkdir(parents=True, exist_ok=True)
+
+
+def _generate_pulse(
+    length: int,
+    fs: int,
+    rng: np.random.Generator,
+    amplitude_range: Tuple[float, float],
+    freq_range: Tuple[float, float],
+    width_range: Tuple[float, float],
 ) -> np.ndarray:
+    """Generate a damped sinusoid pulse."""
+    pulse_width = rng.uniform(*width_range)
+    pulse_len = max(4, int(pulse_width * fs))
+    pulse_len = min(pulse_len, length // 4)
+    t = np.arange(pulse_len) / fs
+
+    amplitude = rng.uniform(*amplitude_range)
+    freq = rng.uniform(*freq_range)
+    decay = np.exp(-t * rng.uniform(4e5, 1.2e6))
+    oscillation = np.sin(2 * np.pi * freq * t)
+    pulse = amplitude * decay * oscillation
+
+    pulse_signal = np.zeros(length, dtype=np.float32)
+    start = rng.integers(0, max(1, length - pulse_len))
+    pulse_signal[start:start + pulse_len] += pulse.astype(np.float32)
+    return pulse_signal
+
+
+def generate_signal(
+    length: int,
+    fs: int,
+    rng: np.random.Generator,
+    fault: bool,
+) -> np.ndarray:
+    """Generate a synthetic PD-like signal."""
+    signal = rng.normal(0.0, 2.0, size=length).astype(np.float32)
+
+    if fault:
+        num_pulses = rng.integers(3, 7)
+        amplitude_range = (30.0, 80.0)
+        freq_range = (80_000.0, 4_000_000.0)
+        width_range = (0.00005, 0.0004)
+    else:
+        num_pulses = rng.integers(0, 3)
+        amplitude_range = (5.0, 25.0)
+        freq_range = (50_000.0, 2_000_000.0)
+        width_range = (0.00003, 0.0002)
+
+    for _ in range(int(num_pulses)):
+        signal += _generate_pulse(length, fs, rng, amplitude_range, freq_range, width_range)
+
+    # Clamp to int8 range to match real dataset dtype.
+    signal = np.clip(np.rint(signal), -127, 127).astype(np.int8)
+    return signal
+
+
+def create_mock_dataset(
+    output_root: Path,
+    stations: int,
+    samples_per_class: int,
+    signal_length: int,
+    sampling_freq: int,
+    start_station_id: int,
+    seed: int,
+    force: bool,
+) -> None:
     """
-    Generate a synthetic partial discharge pulse.
-    
+    Create a mock dataset compatible with the full pipeline.
+
     Args:
-        amplitude: Peak amplitude of the pulse
-        center_freq: Center frequency of the pulse (Hz)
-        pulse_width: Width of the pulse in seconds
-        noise_level: Standard deviation of additive noise
-        fs: Sampling frequency (Hz)
-    
-    Returns:
-        1D numpy array representing the PD pulse
+        output_root: Root folder for the dataset.
+        stations: Number of stations to generate.
+        samples_per_class: Samples per class per station.
+        signal_length: Length of each signal.
+        sampling_freq: Sampling frequency (Hz).
+        start_station_id: First numeric station id.
+        seed: Random seed for reproducibility.
+        force: Whether to overwrite existing output folder.
     """
-    t = np.arange(SIGNAL_LENGTH) / fs
-    
-    # Create a damped exponential pulse (typical PD pulse shape)
-    pulse_start = SIGNAL_LENGTH // 4
-    pulse_end = pulse_start + int(pulse_width * fs)
-    
-    signal = np.zeros(SIGNAL_LENGTH)
-    
-    if pulse_end < SIGNAL_LENGTH:
-        pulse_t = t[pulse_start:pulse_end] - t[pulse_start]
-        # Damped exponential with oscillation (typical PD characteristic)
-        decay = np.exp(-pulse_t * 1e6)  # Fast decay
-        oscillation = np.sin(2 * np.pi * center_freq * pulse_t)
-        pulse = amplitude * decay * oscillation
-        signal[pulse_start:pulse_end] = pulse
-    
-    # Add noise
-    noise = np.random.normal(0, noise_level * amplitude, SIGNAL_LENGTH)
-    signal += noise
-    
-    return signal.astype(np.float32)
+    _ensure_output_root(output_root, force)
+
+    rng = np.random.default_rng(seed)
+    random.seed(seed)
+
+    contactless_root = output_root / "contactless_pd_detection"
+    contactless_root.mkdir(parents=True, exist_ok=True)
+    annotation_path = output_root / "inferred_annotation.csv"
+
+    annotations: List[Dict[str, object]] = []
+    base_time = datetime(2017, 11, 11, 0, 0, 0)
+
+    for station_idx in range(stations):
+        station_id = start_station_id + station_idx
+        station_dir = contactless_root / f"station_{station_id}"
+        station_dir.mkdir(parents=True, exist_ok=True)
+
+        total_samples = samples_per_class * 2
+        for i in range(total_samples):
+            fault = i < samples_per_class
+            measurement_id = station_id * 1000 + (i + 1)
+
+            signal = generate_signal(signal_length, sampling_freq, rng, fault=fault)
+            np.save(station_dir / f"{measurement_id}.npy", signal)
+
+            annotations.append({
+                "idStation": int(station_id),
+                "idMeasurement": int(measurement_id),
+                "faultAnnotation": int(1 if fault else 0),
+                "timeStamp": (base_time + timedelta(hours=len(annotations))).strftime("%Y-%m-%d %H:%M:%S"),
+            })
+
+    annotations_df = pd.DataFrame(annotations)
+    annotations_df.to_csv(annotation_path, index=False)
+
+    print("[OK] Mock dataset created.")
+    print(f"  Root: {output_root.resolve()}")
+    print(f"  Stations: {stations}")
+    print(f"  Samples per class per station: {samples_per_class}")
+    print(f"  Total signals: {len(annotations)}")
+    print(f"  Annotation file: {annotation_path}")
 
 
-def generate_fault_signal() -> np.ndarray:
-    """
-    Generate a signal with fault characteristics (stronger, more frequent PD pulses).
-    
-    Returns:
-        1D numpy array with fault-like PD signal
-    """
-    # Multiple strong PD pulses
-    signal = np.zeros(SIGNAL_LENGTH)
-    
-    # Add 3-5 strong PD pulses
-    num_pulses = random.randint(3, 5)
-    for _ in range(num_pulses):
-        pulse_start = random.randint(1000, SIGNAL_LENGTH - 2000)
-        pulse_width = random.uniform(0.0001, 0.0005)  # 0.1-0.5 ms
-        amplitude = random.uniform(0.5, 1.5)  # Strong amplitude
-        center_freq = random.uniform(100000, 5000000)  # 100 kHz - 5 MHz
-        
-        pulse = generate_pd_pulse(amplitude, center_freq, pulse_width, noise_level=0.15)
-        # Place pulse at specific location
-        pulse_len = len(pulse)
-        if pulse_start + pulse_len <= SIGNAL_LENGTH:
-            signal[pulse_start:pulse_start + pulse_len] += pulse[pulse_start:pulse_start + pulse_len]
-    
-    # Add background noise
-    signal += np.random.normal(0, 0.05, SIGNAL_LENGTH)
-    
-    return signal.astype(np.float32)
+def main() -> None:
+    """CLI entry point."""
+    parser = build_arg_parser()
+    args = parser.parse_args()
 
-
-def generate_normal_signal() -> np.ndarray:
-    """
-    Generate a signal without fault (weaker, fewer PD pulses or just noise).
-    
-    Returns:
-        1D numpy array with normal/no-fault signal
-    """
-    # Weaker or no PD pulses
-    signal = np.zeros(SIGNAL_LENGTH)
-    
-    # 50% chance of having a weak pulse, 50% chance of just noise
-    if random.random() > 0.5:
-        # Single weak pulse
-        pulse_start = random.randint(2000, SIGNAL_LENGTH - 2000)
-        pulse_width = random.uniform(0.00005, 0.0002)  # Shorter, weaker
-        amplitude = random.uniform(0.1, 0.3)  # Weak amplitude
-        center_freq = random.uniform(50000, 2000000)  # Lower frequency range
-        
-        pulse = generate_pd_pulse(amplitude, center_freq, pulse_width, noise_level=0.1)
-        pulse_len = len(pulse)
-        if pulse_start + pulse_len <= SIGNAL_LENGTH:
-            signal[pulse_start:pulse_start + pulse_len] += pulse[pulse_start:pulse_start + pulse_len]
-    
-    # Add background noise (higher relative to signal)
-    signal += np.random.normal(0, 0.1, SIGNAL_LENGTH)
-    
-    return signal.astype(np.float32)
-
-
-def create_mock_dataset():
-    """Create the complete mock dataset structure."""
-    # Create directories
-    STATION_DIR.mkdir(parents=True, exist_ok=True)
-    
-    # Generate annotation records
-    annotations = []
-    base_time = datetime(2024, 1, 1, 0, 0, 0)
-    
-    # 10 samples with fault (faultAnnotation=1)
-    print("Generating 10 samples with fault annotations...")
-    for i in range(1, 11):
-        measurement_id = BASE_STATION_ID * 1000 + i
-        signal = generate_fault_signal()
-        filename = f"{measurement_id}.npy"
-        filepath = STATION_DIR / filename
-        np.save(filepath, signal)
-        
-        annotations.append({
-            "idStation": BASE_STATION_ID,
-            "idMeasurement": measurement_id,
-            "faultAnnotation": 1,
-            "timeStamp": (base_time + timedelta(hours=i)).strftime("%Y-%m-%d %H:%M:%S")
-        })
-        print(f"  Created {filename} (fault)")
-    
-    # 10 samples without fault (faultAnnotation=0)
-    print("\nGenerating 10 samples without fault annotations...")
-    for i in range(11, 21):
-        measurement_id = BASE_STATION_ID * 1000 + i
-        signal = generate_normal_signal()
-        filename = f"{measurement_id}.npy"
-        filepath = STATION_DIR / filename
-        np.save(filepath, signal)
-        
-        annotations.append({
-            "idStation": BASE_STATION_ID,
-            "idMeasurement": measurement_id,
-            "faultAnnotation": 0,
-            "timeStamp": (base_time + timedelta(hours=i)).strftime("%Y-%m-%d %H:%M:%S")
-        })
-        print(f"  Created {filename} (no fault)")
-    
-    # Save annotation CSV
-    df_annotations = pd.DataFrame(annotations)
-    df_annotations.to_csv(ANNOTATION_FILE, index=False)
-    print(f"\n[OK] Annotation file saved: {ANNOTATION_FILE}")
-    print(f"  Total records: {len(annotations)}")
-    print(f"  Fault samples (1): {len(df_annotations[df_annotations['faultAnnotation'] == 1])}")
-    print(f"  Normal samples (0): {len(df_annotations[df_annotations['faultAnnotation'] == 0])}")
-    
-    print(f"\n[OK] Mock dataset created successfully!")
-    print(f"  Location: {MOCK_DATASET_DIR}")
-    print(f"  Station: {STATION_DIR}")
-    print(f"  Signal files: {len(list(STATION_DIR.glob('*.npy')))}")
+    create_mock_dataset(
+        output_root=args.output_root,
+        stations=args.stations,
+        samples_per_class=args.samples_per_class,
+        signal_length=args.signal_length,
+        sampling_freq=args.sampling_freq,
+        start_station_id=args.start_station_id,
+        seed=args.seed,
+        force=args.force,
+    )
 
 
 if __name__ == "__main__":
-    create_mock_dataset()
+    main()

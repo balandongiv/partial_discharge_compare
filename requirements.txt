@@ -19,3 +19,8 @@ joblib
 feature-engine
 mljar-supervised
 reportlab
+requests
+gdown
+google-auth
+google-auth-oauthlib
+google-auth-httplib2

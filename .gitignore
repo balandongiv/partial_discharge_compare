@@ -62,3 +62,7 @@ latex/graphic/mljar_result1.png
 latex/BibThesis.bib.backup
 latex/main.tex
 mock_dataset/
+latex/
+/tests/
+/fyp_partialdischarge/
+/scripts/

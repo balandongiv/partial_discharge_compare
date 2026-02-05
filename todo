@@ -1,9 +1,0 @@
-improve data so it is space efficient by using .npz file
-remove unecessary coding line
-
-fix data cleaning code so the output uses float32
-must have pd value(faultAnnotation) as a column in the feature selection and so on (update from csv file) found in dataset/
-feature engineering and so on combined in 1 file so it easier to see each station
-
-readme for variable definition in each column for feature combination
-save as parquet format for feature selection.

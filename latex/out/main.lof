@@ -1,0 +1,13 @@
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {1.1}{\ignorespaces Global Partial Discharge Monitoring Systems Market By Type (2023--2033), Showing Growth From USD\nobreakspace {}552.9\nobreakspace {}Million In 2023 To USD\nobreakspace {}935.5\nobreakspace {}Million By 2033 \blx@tocontentsinit {0}\parencite {Market.us._2024}.\relax }}{3}{figure.caption.12}%
+\contentsline {figure}{\numberline {1.2}{\ignorespaces Example of partial discharge detection using an acoustic imaging camera (Fluke ii910), where colored contours indicate partial discharge intensity on substation bushings. \blx@tocontentsinit {0}\parencite {Fluke_nd}\relax }}{10}{figure.caption.13}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Top 10 Feature Significance (ANOVA F-Score) Under the Featurewiz--XGBoost Track\relax }}{49}{figure.caption.15}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Top 10 Feature Significance (ANOVA F-Score) Under the MLJAR Internal Feature Selection Track\relax }}{50}{figure.caption.16}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Bar Chart Visualization of Model Performance Metrics Using Featurewiz Feature Selection\relax }}{52}{figure.caption.19}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Bar Chart Visualization of Model Performance Metrics Using MLJAR Feature Selection\relax }}{53}{figure.caption.21}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Comparative Performance Visualization of Models Under Featurewiz (Track 4B) and MLJAR (Track 4C) Feature Selection\relax }}{55}{figure.caption.22}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }

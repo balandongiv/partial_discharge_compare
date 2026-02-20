@@ -1,0 +1,140 @@
+% Define \faculty command properly
+\newcommand{\faculty}[1]{\def\@faculty{#1}}
+
+% Make sure \@faculty is defined and usable
+\newcommand{\printfaculty}{\@faculty}
+
+% Required for using @ in command names
+\makeatletter
+
+% Document Metadata
+\raggedbottom 
+
+\title{Partial Discharge Classification using Machine Learning}
+\author{MALCOLM SABINUS}
+
+\faculty{FACULTY OF SCIENCE AND TECHNOLOGY} % Now defined properly
+
+\degree{BACHELOR OF SCIENCE WITH HONORS INDUSTRIAL PHYSICS} % or \degree{Master of Science} 
+\mainsupervisor{Dr. Rodney Petrus Balandong}
+\matricno{BS22110396} % Replace with actual matric number if needed
+\declarationLLM{I hereby declare that this thesis is my own work and has not been submitted elsewhere for any degree or qualification.} % Declaration text
+\newcommand{\listofsymbolss}{} % Define list of symbols command
+% \cosupervisora{AP. Dr. Google}
+
+\submitdate{\ifcase\the\month\or
+	JANUARY\or FEBRUARY\or MARCH\or APRIL\or MAY\or JUNE\or
+	JULY\or AUGUST\or SEPTEMBER\or OCTOBER\or NOVEMBER\or DECEMBER\fi
+	\space \number\the\year}
+
+\copyrightyear{\number\the\year}
+
+\authoraddress{1234 Elm Street, Apt 567\\\hline Springfield, 98765\\\hline Any State, Malaysia\\\hline}
+
+\makeatother % End of @ usage
+
+\abstract{
+Partial Discharge (PD) is a critical indicator of insulation degradation in high-voltage electrical equipment, and accurate PD classification is essential for effective condition-based maintenance and early fault prevention. Conventional PD diagnostic methods rely heavily on expert interpretation of discharge patterns, making them subjective, time-consuming, and susceptible to noise and complex operating environments. To overcome these limitations, this study evaluates the effectiveness of traditional machine learning algorithms for automated PD classification using a comprehensive multi-domain feature-based framework.
+
+Several widely used classifiers, including Support Vector Machine, Random Forest, Decision Tree, k-Nearest Neighbors, and Artificial Neural Networks, were investigated using a publicly available PD dataset. Features were extracted from time-domain, statistical, frequency-domain, and time--frequency representations of PD signals, followed by feature selection to identify the most discriminative parameters. Model performance was evaluated using stratified cross-validation and quantified using classification accuracy and F1-score.
+
+The experimental results indicate that ensemble-based and margin-based classifiers achieved superior performance compared to simpler models. In particular, Random Forest and Support Vector Machine consistently delivered the best results, achieving classification accuracies exceeding 90\% and F1-scores above 90\% across both individual and combined datasets. Feature selection was shown to further enhance classification performance while reducing model complexity, with features related to phase-resolved discharge characteristics and energy distribution contributing most significantly to predictive accuracy.
+
+Overall, this study demonstrates that optimized traditional machine learning models, when combined with carefully selected feature sets, can achieve accurate, robust, and generalizable PD classification. These findings support the practical applicability of machine learning-based PD diagnostic systems for real-world high-voltage power infrastructure monitoring.
+}
+
+\abstrakMalay{}
+
+\penghargaan{...}     % Acknowledgement text
+
+
+\beforepreface % Don't change this
+
+
+
+
+% \abstractMalay{Pemerolehan perbendaharaan kata baharu dalam bahasa kedua memerlukan satu siri pendedahan berulang kali. Melalui platform digital dan permainan yang baru, pendedahan tersebut boleh disediakan dengan mudah. Oleh kerana kelaziman dan akses teknologi mudah alih adalah senang, pelajar telah menunjukkan tahap kebergantungan yang tinggi terhadap alat digital untuk belajar, seperti melalui telefon pintar berbanding dengan pendekatan tradisional. Kajian ini bertujuan untuk meneroka sama ada aplikasi tesaurus berasaskan gamificasi boleh digunakan untuk memperbaiki tahap penguasaan perbendaharaan kata dalam Bahasa Inggeris dalam kalangan pelajar universiti awam di Malaysia. Hasil kajian menunjukkan bahawa pelajar mempunyai pengalaman yang kurang dalam menggunakan aplikasi tesaurus berbanding pembelajaran bahasa berasaskan permainan atau aplikasi lain. Pelajar lebih suka menggunakan pembelajaran mudah alih berbanding pendekatan tradisional, lebih suka platform dalam talian dan bukannya aplikasi mudah alih, dan memperoleh atau membina perbendaharaan kata mereka melalui menonton filem dan mendengar muzik. Meskipun fakta menyatakan bahawa kebanyakan pelajar mempunyai pengalaman yang mencukupi dalam penggunaan aplikasi mudah alih dan permainan, namun mereka jarang menggunakan platform tersebut untuk tujuan pembelajaran. Ini menunjukkan bahawa adalah penting untuk menggabungkan elemen permainan ke dalam platform pembelajaran khususnya dalam pembelajaran perbendaharaan kata Bahasa Inggeris sebagai satu cara untuk menjana motivasi dan penglibatan pelajar. Oleh yang demikian, pensyarah perlu memberi tumpuan lebih kepada penggunaan yang jelas terhadap teknologi digital mudah alih dalam pengajaran dan pembelajaran di bilik darjah. }
+
+% \newcommand{\faculty}[1]
+
+
+% \raggedbottom 
+
+% \title{THE TITLE OF YOUR DISSERTATION}
+% \author{YOUR NAME}
+% \programfacul{INDUSTRIAL PHYSICS}
+% \faculty{FACULTY OF SCIENCE AND NATURAL RESOURCES}
+
+
+% \degree{ BACHELOR OF SCIENCE WITH HONORS} % or \degree{Master of Science} 
+% \mainsupervisor{AP. Dr. Zoro}
+% % \cosupervisora{AP. Dr. Google}
+% \submitdate{\ifcase\the\month\or
+% 	JANUARY\or FEBRUARY\or MARCH\or APRIL\or MAY\or JUNE\or
+% 	JULY\or AUGUST\or SEPTEMBER\or OCTOBER\or NOVEMBER\or DECEMBER\fi
+% 	\space \number\the\year} % or \submitdate{Month 20xx}
+% \copyrightyear{\number\the\year} % or \copyrightyear{20xx}
+% \authoraddress{1234 Elm Street, Apt 567\\\hline Springfield, 98765\\\hline Any State, Malaysia\\\hline}
+
+
+% \beforepreface %dont change this
+
+
+% %-----------------------------------------------
+% \clearpage
+% \addcontentsline{toc}{section}{DEDICATION}
+% \prefacesection{Dedication}
+% \begin{center}
+% if you decide to dedicate your thesis to someone, it will be on a separate page.
+% \end{center}
+% %------------------------------------------------
+
+% %-----------------------------------------------
+% \prefacesection{Acknowledgements}
+% \renewcommand\listtablename{\normalsize\normalfont\centering\vspace*{-0.5in} ACKNOWLEDGEMENTS}
+% \begin{singlespace} 
+% 	\setstretch{1.05}
+
+
+% It is good to thank here your supervisors and any sponsoring bodies, as well as any family,
+% friends, cats, dogs etc. that have been supportive during your time at University.
+% \end{singlespace}
+% %-----------------------------------------------
+% \iftablespage
+% \phantomsection
+% \addcontentsline{toc}{section}{ACKNOWLEDGEMENTS}% This adds the acknowledgement
+
+% %-----------------------------------------------
+% \prefacesection{Abstract}
+% \renewcommand\listtablename{\normalsize\normalfont\centering\vspace*{-0.5in} ABSTRACT}
+% \iftablespage
+% \phantomsection
+
+
+
+
+% \addcontentsline{toc}{section}{ABSTRACT}
+
+% According to the guidelines the abstract should not exceed 300 words. However, it is unlikely
+% that anyone will be counting when you submit. If you still wish to do so, then better use
+% Emacs count-words command
+% %-----------------------------------------------
+
+
+% %-----------------------------------------------
+% \prefacesection{Abstrak}
+% \renewcommand\listtablename{\normalsize\normalfont\centering\vspace*{-0.5in} ABSTRACT}
+% \iftablespage
+% \phantomsection
+% \addcontentsline{toc}{section}{ABSTRAK}
+% \indent 
+% \begin{singlespace} 
+% if require Malay
+% \end{singlespace}
+
+% \clearpage
+%-----------------------------------------------
+
+% \newpage
+% \thesiscopyrightpage %PLACING COPYRIGHT PAGE AFTER ABSTRAK (According to Aug 2012)
+\afterpreface  %don't change this

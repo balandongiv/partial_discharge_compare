@@ -1,0 +1,21 @@
+[
+  {
+    "key": "ctrl+shift+b",
+    "command": "-workbench.action.tasks.build"
+  },
+  {
+    "key": "ctrl+shift+b",
+    "command": "latex-workshop.build",
+    "when": "editorTextFocus && editorLangId == latex"
+  },
+  {
+    "key": "ctrl+alt+v",
+    "command": "latex-workshop.view",
+    "when": "editorLangId == latex"
+  },
+  {
+    "key": "ctrl+alt+c",
+    "command": "latex-workshop.clean",
+    "when": "editorLangId == latex"
+  }
+]

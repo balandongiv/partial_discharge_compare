@@ -1,0 +1,285 @@
+\chapter{Results}
+
+\section{Experimental Results}
+
+This chapter reports the classification results obtained from high frequency partial discharge (PD) signals acquired from medium voltage overhead lines. Two optimization regimes are compared in terms of their selected feature sets and the resulting classification performance a Featurewiz-based selection track and an MLJAR track. Model performance is reported using Accuracy, Precision, Recall, F1-score, and ROC AUC, with results summarized in the tables and figures that follow.
+
+\section{Comparison of Feature Selection Outcomes}
+
+The first set of results compares the features retained by the two optimization regimes. Table \ref{tab:fs_comparison_outcomes} lists the 30 features that were jointly selected, providing a direct view of the overlap between the Featurewiz and MLJAR selections. The shared set spans time-domain statistics (for example, skewness, kurtosis, and crest\_factor), frequency-domain descriptors (for example, fft\_mean, fft\_max, stft\_mean, stft\_max, and spectral\_entropy), PRPD pattern measures (for example, multiple quadrant-based differences and interactions), and complexity measures (for example, fractal\_dimension and entropy combinations). The prevalence of both original descriptors and interaction terms among the jointly selected features indicates that both regimes consistently retained information reflecting amplitude characteristics, spectral content, phase-resolved distribution structure, and signal complexity.
+
+\begin{sidewaystable}[p]
+\centering
+\caption{Comparison of Jointly Selected Feature Families Across Featurewiz and MLJAR Feature Selection Methods}
+\label{tab:fs_comparison_outcomes}
+\footnotesize
+\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{|l|p{5cm}|l|c|c|p{5cm}|}
+\hline
+\textbf{Category} & \textbf{Features} & \textbf{Feature Type} & \textbf{Featurewiz} & \textbf{MLJAR} & \textbf{Selection Rationale} \\
+\hline
+Time Domain &
+Skewness, Kurtosis, Crest Factor &
+Original &
+Yes &
+Yes &
+Capture waveform asymmetry, impulsivity, and peak-to-RMS characteristics associated with discharge intensity \\
+\hline
+Time-Domain Statistical Interaction &
+RMS--Skewness and RMS--Kurtosis Interaction Ratios &
+Interaction &
+Yes &
+Yes &
+Relate signal amplitude to higher-order statistical moments, enhancing sensitivity to transient PD behavior \\
+\hline
+Frequency Domain &
+FFT Mean and FFT Maximum Spectral Magnitude &
+Original &
+Yes &
+Yes &
+Summarize global spectral energy distribution and dominant frequency components \\
+\hline
+Time--Frequency Domain &
+STFT Mean and STFT Maximum Energy &
+Original &
+Yes &
+Yes &
+Capture localized time--frequency energy concentrations associated with non-stationary PD activity \\
+\hline
+Entropy Measures &
+Spectral Entropy &
+Original &
+Yes &
+Yes &
+Quantifies spectral disorder and complexity under varying signal conditions \\
+\hline
+Time--Frequency Interaction &
+Global--Local Spectral Interaction Ratios (FFT/STFT) &
+Interaction &
+Yes &
+Yes &
+Relate global frequency content to localized transient behavior under interference \\
+\hline
+PRPD Pattern (Composite) &
+Quadrant-Wise PRPD Mean Differences and Absolute Differences &
+Composite Interaction &
+Yes &
+Yes &
+Encode phase-dependent asymmetry and discharge pattern shifts across the AC cycle using multi-combination PRPD statistics \\
+\hline
+PRPD Pattern (Composite) &
+PRPD Density, Energy, and Polarity Interaction Features &
+Composite Interaction &
+Yes &
+Yes &
+Capture structured phase-resolved discharge distributions using composite \texttt{mc\_*} feature interactions \\
+\hline
+Complexity Measures &
+Fractal Dimension &
+Original &
+Yes &
+Yes &
+Measures waveform self-similarity and geometric complexity \\
+\hline
+Entropy Interaction (Cross-Domain) &
+Combined Time--Frequency Entropy Measures &
+Interaction &
+Yes &
+Yes &
+Aggregate entropy information across domains to summarize non-stationary signal behavior \\
+\hline
+\end{tabular}
+\end{sidewaystable}
+
+Overall, the overlap in Table \ref{tab:fs_comparison_outcomes} shows that both optimization regimes converged on a common set of informative descriptors across multiple feature categories. In addition to shared original features, the jointly selected interaction terms largely reflect ratios, differences, and absolute differences that relate global and localized spectral summaries and quantify contrasts between PRPD quadrants.
+
+\subsection{Top-Ranked Features Under Each Selection Track}
+
+Figure~\ref{fig:featurewiz_xgb_sig} presents the top ten features ranked by ANOVA F-score under the Featurewiz--XGBoost track. The ranking is dominated by \textit{spectral\_entropy}, followed by frequency-domain interaction and entropy-combination terms, including \textit{fft\_mean\_div\_stft\_mean} and \textit{shannon\_entropy\_plus\_spectral\_entropy}. Classical time-domain statistics such as \textit{kurtosis} appear within the top ten but are ranked below entropy- and FFT/STFT-derived descriptors.
+
+Figure~\ref{fig:mljar_sig} shows the corresponding top ten ranking produced by the MLJAR internal feature selection track. In contrast to the Featurewiz track, MLJAR prioritizes composite and interaction variables dominated by combinations of \textit{spectral\_entropy} with \textit{fractal\_dimension}, RMS-related terms, and PRPD-related ratios. Notably, \textit{spectral\_entropy} and its derived combinations appear consistently among the highest-ranked features across both tracks, indicating stable retention of entropy-based descriptors despite differences in the specific formulations emphasized by each regime.
+
+Overall, the top-ranked features from both tracks show agreement at the level of feature families (entropy/complexity and frequency-domain summaries), while differing in the relative emphasis placed on standalone descriptors versus composite interaction terms.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{graphic/featurewiz_corr_xgb_feature_significance.png}
+    \caption{Top 10 Feature Significance (ANOVA F-Score) Under the Featurewiz--XGBoost Track}
+    \label{fig:featurewiz_xgb_sig}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{graphic/mljar_internal_feature_significance.png}
+    \caption{Top 10 Feature Significance (ANOVA F-Score) Under the MLJAR Internal Feature Selection Track}
+    \label{fig:mljar_sig}
+\end{figure}
+
+
+\subsection{Comparative Analysis of Feature Selection Tracks}
+
+The feature selection outcomes are summarized as two tracks. Track 4B corresponds to the Featurewiz selection, resulting in 31 retained features, whereas Track 4C corresponds to the MLJAR feature set, comprising 2070 features. Table \ref{tab:feature_tracks} reports the best F1 score achieved under each track, enabling a direct comparison between feature count and performance.
+
+\begin{table}[H]
+	\centering
+	\caption{Comparative Analysis of Feature Selection Tracks: Feature Count and Best Model F1-Score}
+	\label{tab:feature_tracks}
+	\renewcommand{\arraystretch}{1.2}
+	\begin{tabular}{|l|l|c|c|}
+		\hline
+		\textbf{Track ID} & \textbf{Selection Method} & \textbf{Feature Count} & \textbf{Best Model F1-Score (\%)} \\
+		\hline
+		Track 4C & MLJAR & 2070 & 73.11 (Random Forest) \\
+		Track 4B & Featurewiz & 31 & 71.84 (Random Forest) \\
+		\hline
+	\end{tabular}
+\end{table}
+
+As shown in Table \ref{tab:feature_tracks}, Track 4C achieved the highest reported F1 score (73.11\%) with 2070 variables, while Track 4B achieved an F1 score of 71.84\% with 31 variables. The absolute difference in F1 score between the two tracks is 1.27\%.
+
+\section{Comparative Machine Learning Model Performance Evaluation}
+
+The classification performance of the models is summarized under both optimization regimes using the reported metrics.
+
+\subsection{Results with Featurewiz Selection}
+
+Table \ref{tab:featurewiz_results} summarizes the performance metrics for the classifiers when using the Featurewiz selected feature set (Track 4B). The results are reported as the average of a 10-fold stratified cross-validation process.
+
+\begin{table}[H]
+    \centering
+    \caption{Comprehensive Performance Evaluation Using Featurewiz Feature Selection (Track 4B)}
+    \label{tab:featurewiz_results}
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{@{}lccccc@{}} % @{} removes left/right outer padding
+        \hline
+        \textbf{Model} & \textbf{Acc. (\%)} & \textbf{Prec. (\%)} & \textbf{Rec. (\%)} & \textbf{F1 (\%)} & \textbf{AUC (\%)} \\
+        \hline
+        RF  & 91.91 $\pm$ 0.62 & 83.55 $\pm$ 3.18 & 67.09 $\pm$ 2.25 & 71.84 $\pm$ 2.71 & 90.24 $\pm$ 0.75 \\
+        SVM & 91.64 $\pm$ 0.44 & 84.50 $\pm$ 2.39 & 64.36 $\pm$ 2.08 & 69.13 $\pm$ 2.54 & 88.18 $\pm$ 1.13 \\
+        kNN & 90.71 $\pm$ 0.47 & 77.89 $\pm$ 2.91 & 63.21 $\pm$ 1.40 & 67.05 $\pm$ 1.71 & 79.43 $\pm$ 2.30 \\
+        ANN & 89.42 $\pm$ 0.58 & 71.61 $\pm$ 1.76 & 69.21 $\pm$ 2.87 & 70.23 $\pm$ 2.31 & 86.33 $\pm$ 1.65 \\
+        DT  & 87.21 $\pm$ 0.97 & 66.63 $\pm$ 2.27 & 67.49 $\pm$ 2.48 & 67.01 $\pm$ 2.30 & 67.49 $\pm$ 2.48 \\
+        \hline
+    \end{tabular}
+
+    \vspace{2pt}
+    {\footnotesize \textit{Note:} RF = Random Forest, SVM = Support Vector Machine, kNN = k-Nearest Neighbors, ANN = Artificial Neural Network, DT = Decision Tree.}
+\end{table}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{graphic/featurewiz_chart.png}
+    \caption{Bar Chart Visualization of Model Performance Metrics Using Featurewiz Feature Selection}
+    \label{fig:featurewiz_bar}
+\end{figure}
+
+As shown in Table \ref{tab:featurewiz_results}, Random Forest achieved the highest F1 score (71.84\%) within Track 4B, with an accuracy of 91.91\% and a ROC AUC of 90.24\%. SVM attained a similar accuracy (91.64\%) and an F1 score of 69.13\%, while ANN recorded the highest recall (69.21\%) with an F1 score of 70.23\%. Figure \ref{fig:featurewiz_bar} provides a visual comparison consistent with the tabulated metrics.
+
+Across the Featurewiz setting, accuracy values are concentrated around 90--92\% for RF, SVM, and k-NN, whereas Decision Tree and ANN yield lower accuracies of 87.21\% and 89.42\%, respectively. Despite similar accuracies among RF, SVM, and k-NN, the F1 scores differentiate these models more clearly, reflecting differences in the reported precision and recall values.
+
+Decision Tree produced the lowest ROC AUC (67.49\%), while Random Forest recorded the highest F1 score (71.84\%) alongside a high precision value (83.55\%). These results indicate that within Track 4B, the strongest balance of precision and recall is achieved by Random Forest.
+
+\subsection{Results with MLJAR}
+
+Table \ref{tab:mljar_results} presents the results obtained using the MLJAR track (Track 4C). The results enable a direct comparison with the Featurewiz selection results in Table \ref{tab:featurewiz_results}.
+
+\begin{table}[H]
+    \centering
+    \caption{Comprehensive Performance Evaluation Using MLJAR Feature Selection (Track 4C)}
+    \label{tab:mljar_results}
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{@{}lccccc@{}}
+        \hline
+        \textbf{Model} & \textbf{Acc. (\%)} & \textbf{Prec. (\%)} & \textbf{Rec. (\%)} & \textbf{F1 (\%)} & \textbf{AUC (\%)} \\
+        \hline
+        RF  & 91.83 $\pm$ 0.48 & 81.50 $\pm$ 1.93 & 68.94 $\pm$ 2.15 & 73.11 $\pm$ 2.23 & 90.63 $\pm$ 0.47 \\
+        ANN & 89.80 $\pm$ 1.11 & 73.41 $\pm$ 2.74 & 72.32 $\pm$ 1.49 & 72.65 $\pm$ 1.23 & 87.45 $\pm$ 1.50 \\
+        kNN & 90.97 $\pm$ 0.62 & 77.53 $\pm$ 2.82 & 67.46 $\pm$ 1.99 & 70.91 $\pm$ 2.12 & 82.07 $\pm$ 1.92 \\
+        SVM & 91.55 $\pm$ 0.40 & 84.49 $\pm$ 2.49 & 63.87 $\pm$ 2.10 & 68.54 $\pm$ 2.53 & 89.07 $\pm$ 0.87 \\
+        DT  & 87.76 $\pm$ 0.67 & 68.09 $\pm$ 1.53 & 69.24 $\pm$ 1.51 & 68.62 $\pm$ 1.45 & 69.24 $\pm$ 1.51 \\
+        \hline
+    \end{tabular}
+
+    \vspace{2pt}
+    {\footnotesize \textit{Note:} RF = Random Forest, ANN = Artificial Neural Network, kNN = k-Nearest Neighbors, SVM = Support Vector Machine, DT = Decision Tree.}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{graphic/mljar_result.png}
+    \caption{Bar Chart Visualization of Model Performance Metrics Using MLJAR Feature Selection}
+    \label{fig:mljar_bar}
+\end{figure}
+
+Table~\ref{tab:mljar_results} presents the classification performance obtained using the MLJAR feature selection framework (Track~4C) for all evaluated machine learning models. Performance was assessed using 10-fold stratified cross-validation and reported in terms of accuracy, precision, recall, F1-score, and ROC-AUC, including their corresponding standard deviations. These results enable direct comparison with the Featurewiz-based results reported in Table~\ref{tab:featurewiz_results}.
+
+Among the evaluated models, Random Forest (RF) achieved the highest F1-score of $73.11 \pm 2.23\%$ and the highest ROC-AUC of $90.63 \pm 0.47\%$. The Artificial Neural Network (ANN) obtained an F1-score of $72.65 \pm 1.23\%$ and recorded the highest recall at $72.32 \pm 1.49\%$. The k-Nearest Neighbors (kNN) classifier achieved an F1-score of $70.91 \pm 2.12\%$, with accuracy and ROC-AUC values of $90.97 \pm 0.62\%$ and $82.07 \pm 1.92\%$, respectively.
+
+Support Vector Machine (SVM) produced the highest precision among all models at $84.49 \pm 2.49\%$ and achieved an accuracy of $91.55 \pm 0.40\%$, while its F1-score was $68.54 \pm 2.53\%$. Decision Tree (DT) recorded the lowest overall performance, with an F1-score of $68.62 \pm 1.45\%$, accuracy of $87.76 \pm 0.67\%$, and ROC-AUC of $69.24 \pm 1.51\%$.
+
+Figure~\ref{fig:mljar_bar} illustrates the comparative F1-score performance of all classifiers under the MLJAR feature selection framework and reflects the ranking observed in Table~\ref{tab:mljar_results}.
+
+\subsection{Performance Comparison of ML Models Under Different Feature Selection Techniques}
+
+Figure \ref{fig:comparison_chart} visualizes the performance differences observed between the Featurewiz (Track 4B) and MLJAR (Track 4C) strategies.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{graphic/comparison_chart.png}
+    \caption{Comparative Performance Visualization of Models Under Featurewiz (Track 4B) and MLJAR (Track 4C) Feature Selection}
+    \label{fig:comparison_chart}
+\end{figure}
+
+Figure~\ref{fig:comparison_chart} presents a comparative visualization of the F1-score performance of machine learning models evaluated using Featurewiz (Track~4B) and MLJAR (Track~4C) feature selection strategies. The figure summarizes the mean F1-scores obtained for each classifier under both tracks.
+
+Across all evaluated models, the MLJAR track yields higher F1-scores than the Featurewiz track for Artificial Neural Network (ANN), Decision Tree (DT), k-Nearest Neighbors (kNN), and Random Forest (RF). The Support Vector Machine (SVM) model shows comparable F1-score values across both feature selection approaches. The highest F1-score under the Featurewiz track is $71.84\%$, while the highest F1-score under the MLJAR track is $73.11\%$.
+
+The comparative trends illustrated in Figure~\ref{fig:comparison_chart} directly reflect the mean F1-score values reported in Tables~\ref{tab:featurewiz_results} and~\ref{tab:mljar_results}. The figure serves as a visual summary of the tabulated results, highlighting the relative performance differences between models under the Featurewiz and MLJAR feature selection frameworks.
+
+\section{Qualitative and Quantitative Comparison with Other Studies}
+
+Table \ref{tab:vsb_comparison} presents a focused qualitative and quantitative comparison between the present study and selected recent works on partial discharge (PD) classification that employ traditional machine learning techniques. The comparison is intentionally limited to studies published within the last five years to ensure contemporary relevance. Deep learning–based approaches are excluded to maintain methodological consistency and to enable fair benchmarking against classical machine learning classifiers.
+
+\begin{table}[H]
+    \centering
+    \caption{Benchmark Comparison of Partial Discharge Classification Studies with Explicitly Reported Metrics}
+    \label{tab:vsb_comparison}
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{|p{4cm}|p{4cm}|p{3.5cm}|p{4.5cm}|}
+        \hline
+        \textbf{Study} & \textbf{Machine Learning Models} & \textbf{Performance Metrics} & \textbf{Feature Selection / Utilization} \\
+        \hline
+        \textbf{\parencite{Almehdhar_2025}} & Deep Learning & F1-Score: 96.70\% & Time-frequency analysis techniques for multiple PD source classification \\
+        \hline
+        \textbf{\parencite{Ishaq_2025}} & Deep Learning, CNN & Accuracy: 100\% & Signal-processing + deep-learning framework for PD classification \\
+        \hline
+        \textbf{\parencite{Kalaivani_2025}} & Neural Network, CNN & Accuracy: 99\% & Adversarial de-noising with enhanced feature extraction from PRPD patterns \\
+        \hline
+        \textbf{\parencite{Li_2025_30}} & Deep Learning & Accuracy: 98\% & CAE-ACGAN and ResNet-based PD pattern recognition under class imbalance \\
+        \hline
+        \textbf{Our Methodology} & \textbf{MLJAR Random Forest} &
+        \textbf{Accuracy: 91.83\%} \newline
+        \textbf{Precision: 81.50\%} \newline
+        \textbf{Recall: 68.94\%} \newline
+        \textbf{F1-Score: 73.11\%}
+        & \textbf{Multi-domain features: Time, Frequency, Statistical, PRPD} \\
+        \hline
+    \end{tabular}%
+    }
+\end{table}
+
+
+
+As summarized in Table \ref{tab:vsb_comparison}, recent partial discharge (PD) classification studies predominantly employ deep learning–based architectures, including convolutional neural networks and adversarial learning frameworks, to achieve high classification performance. The reported results indicate strong performance metrics, with accuracy values approaching or reaching near-perfect levels and high F1-scores, as observed in studies such as \parencite{Almehdhar_2025, Ishaq_2025, Kalaivani_2025, Li_2025_30}. These outcomes are largely attributed to the capability of deep learning models to automatically extract hierarchical and discriminative representations from complex PD signal patterns.
+
+Despite their strong reported performance, the deep learning approaches summarized in the table rely on computationally intensive architectures, extensive data preprocessing, and large labeled datasets. Several studies further incorporate advanced techniques such as adversarial denoising, generative models, or deep feature augmentation to address challenges such as noise contamination and class imbalance. While these strategies enhance classification accuracy, they also increase model complexity and reduce transparency, which may pose challenges for practical deployment and physical interpretability in industrial PD monitoring applications.
+
+In contrast, the proposed methodology adopts a classical machine learning framework based on a Random Forest classifier combined with automated feature selection across multiple PD domains. Although the achieved accuracy is lower than that reported by deep learning–based methods, the present work provides a more comprehensive and balanced evaluation through the simultaneous reporting of accuracy, precision, recall, and F1-score. Furthermore, the integration of time-domain, frequency-domain, statistical, and phase-resolved partial discharge (PRPD) features enables meaningful physical interpretation of the classification results. This positions the proposed approach as a transparent and computationally efficient alternative for PD diagnosis, particularly in scenarios where data availability, interpretability, and deployment constraints are critical considerations.
+
+

@@ -15,7 +15,6 @@
 /partial_discharge_compare/dataset/
 /partial_discharge_compare/latex/
 /partial_discharge_compare/tests/
-latex/
 tests/
 dataset/
 step1_feature_engineering.py
@@ -25,7 +24,6 @@ step4_model_training.py
 step5_evaluation.py
 antigravity_results/
 outputs/
-latex/main.tex
 mock_dataset/
 /fyp_partialdischarge/
 /scripts/

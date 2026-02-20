@@ -1,0 +1,22 @@
+[0] Config.pm:306> INFO - This is Biber 2.18
+[0] Config.pm:309> INFO - Logfile is 'out/main.blg'
+[71] biber:340> INFO - === Mon Feb 16, 2026, 06:36:48
+[93] Biber.pm:418> INFO - Reading 'out/main.bcf'
+[197] Biber.pm:978> INFO - Found 134 citekeys in bib section 0
+[212] Biber.pm:4401> INFO - Processing section 0
+[221] Biber.pm:4592> INFO - Looking for bibtex file 'BibThesis.bib' for section 0
+[338] bibtex.pm:1713> INFO - LaTeX decoding ...
+[1463] bibtex.pm:1518> INFO - Found BibTeX data source 'BibThesis.bib'
+[2543] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[2544] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[2544] Biber.pm:4221> INFO - Sorting list 'ynt/apasortcite//global/global' of type 'entry' with template 'ynt' and locale 'en-US'
+[2544] Biber.pm:4227> INFO - No sort tailoring available for locale 'en-US'
+[2782] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[2783] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[2783] Biber.pm:4221> INFO - Sorting list 'ynt/global//global/global' of type 'entry' with template 'ynt' and locale 'en-US'
+[2783] Biber.pm:4227> INFO - No sort tailoring available for locale 'en-US'
+[2934] bbl.pm:654> INFO - Writing 'out/main.bbl' with encoding 'UTF-8'
+[3215] bbl.pm:757> INFO - Output to out/main.bbl
+[3216] Biber.pm:130> WARN - legacy year field 'n.d.' in entry 'Fluke_nd' is not an integer - this will probably not sort properly.
+[3216] Biber.pm:130> WARN - BibTeX subsystem: /tmp/biber_tmp_U6h8/aad8843c857decffda1fb15466de4ac6_38709.utf8, line 11176, warning: 1 characters of junk seen at toplevel
+[3216] Biber.pm:132> INFO - WARNINGS: 2

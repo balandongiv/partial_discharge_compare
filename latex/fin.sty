@@ -1,0 +1,10 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{fin}[2026/02/16 Abbreviations]
+
+\RequirePackage{acro}
+
+\acsetup{
+  first-style = short
+}
+
+\InputIfFileExists{NomenclatureAbbreviations.tex}{}{}

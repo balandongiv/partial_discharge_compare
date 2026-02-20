@@ -1,10 +1,759 @@
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{fin}[2026/02/16 Abbreviations]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% fin.sty
+% Fin Thesis Style Package
+% Version: 1.0  (2025/03/14)
+%
+% Description:
+% This package defines the style for thesis documents.
+% It is designed to be used with the 'report' document class.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\RequirePackage{acro}
+\ProvidesPackage{fin}[2025/03/14 v1.0 Fin Thesis Style]
 
-\acsetup{
-  first-style = short
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Package Options & Preliminary Checks
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\typeout{Document Style Option `fin' for latex2e as modified by rpb and pending approval on <$Date: 03/08/2025 $>.}
+
+% Check if the 'report' document class is used.
+\@ifundefined{chapter}{%
+    \@latexerr{The `fin' package requires the `report' document class}{}%
+}{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Package Loading
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Encoding and essential packages
+\RequirePackage[utf8]{inputenc}  % Support for utf8 input
+
+% Layout and formatting packages
+\RequirePackage{array}         % Enhanced array and tabular environments
+\RequirePackage{calc}          % Advanced mathematical calculations in LaTeX
+\RequirePackage{caption}       % Customization of captions in floats
+\RequirePackage{datetime}      % Flexible date and time formatting
+\RequirePackage{enumitem}      % Customization of list environments
+\RequirePackage{floatrow}      % Improved float handling
+\RequirePackage{parskip}       % Control paragraph spacing
+\RequirePackage{ragged2e}      % Enhanced justification options
+\RequirePackage{setspace}      % Easy changing of line spacing
+\RequirePackage[titles]{tocloft} % Table of contents, list of figures, etc. customization
+\RequirePackage[page,titletoc]{appendix} % Appendix management
+
+% Typography and fonts
+\RequirePackage{fontspec}      % For loading OpenType fonts, required for custom font
+
+% Citation and bibliography
+\RequirePackage[
+  style=apa,
+  backend=biber,
+  natbib,
+  sorting=ynt
+]{biblatex} % APA style bibliography using biber
+
+% Utilities and enhancements
+\RequirePackage{bookmark}      % Improved PDF bookmarks
+\RequirePackage{csquotes}      % Context-sensitive quotations
+\RequirePackage{lineno}        % Line numbering
+\RequirePackage{listofsymbols}   % List of symbols and abbreviations
+\RequirePackage{tikz}          % Graphics package
+
+% Load listofsymbols with final option after tocloft
+% \RequirePackage[final]{listofsymbols} % Load listofsymbols after tocloft
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Font Settings
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Set main font using fontspec (using Tahoma from a local directory named 'font/')
+% Requires compiling with XeLaTeX or LuaLaTeX
+\setmainfont{Tahoma}[
+  Path = font/,
+  Extension = .ttf,
+  BoldFont = tahomabd,
+]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Section Formatting
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Commands for List of Abbreviations (from listofsymbols package)
+\let\symbol\newsym
+\let\abbr\newsub
+
+% Line spacing and paragraph settings
+\setstretch{1.5}              % Set line spacing to 1.5
+\setlength{\parskip}{0pt}    % Set paragraph spacing
+\setlength{\parindent}{20pt}  % Set paragraph indentation
+\def\myparagraphindent{20pt}   % Define a command for paragraph indent length
+
+%%%%%%%%%%%%%%% FONT OVERWRITE OR SHORTCUT %%%%%%%%%%%%%%%%%%%%%
+% Define a command for preface section header font (14pt, 16pt line spacing, bold)
+\newcommand\PrefaceFontSection{\fontsize{12pt}{14pt}\selectfont\bfseries}
+
+%%%%%
+%%%%%   SETUP MARGINS AND PENALTIES NEEDED FOR UTP THESIS
+%%%%%
+% Paper size notes:
+% A4: 8.27in × 11.69in (210 × 297mm)
+% Letter: 8.5 × 11in (215.9 × 279.4mm)
+% Margin requirements: 1" margins, 1.5" on binding edge
+
+% Set margins based on twosided or onesided document option
+\if@twoside
+    \setlength\oddsidemargin   {36.1\p@}   % 1.5 inch (binding edge for odd pages)
+    \setlength\evensidemargin  {0\p@}      % 1 inch (non-binding edge for even pages)
+\else
+    \setlength\oddsidemargin   {36.1\p@}   % 1.5 inch (left margin for onesided)
+    \setlength\evensidemargin  {36.1\p@}   % 1.5 inch (effective, but overridden by \oddsidemargin for onesided)
+\fi
+
+\marginparsep 0pt % Set marginpar separation to 0pt
+
+\setlength{\topmargin}{0in}    % Set top margin to 0in
+\headheight 0pt                % Set header height to 0pt
+\headsep 0pt                   % Set header separation to 0pt
+
+% Dimensions of the main text area on the page
+\textheight 9.4in
+\textwidth 5.77in
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Section Numbering and Depth
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Set section numbering depth to paragraph (chapter, section, subsection, subsubsection, paragraph)
+\setcounter{secnumdepth}{3}
+
+% Reset chapter and section counters (important for thesis structure)
+\setcounter{chapter}{0}
+\setcounter{section}{0}
+\setcounter{subsection}{1}
+\setcounter{subsubsection}{1}
+
+% Appendix counter (for appendix chapter numbering)
+\newcounter{appendixcounter}
+\setcounter{appendixcounter}{1}
+
+% Redefine \appendix command for appendix chapter numbering (A, B, C, ...)
+\renewcommand{\appendix}{
+    \setcounter{chapter}{0}
+    \renewcommand{\thechapter}{\Alph{chapter}}
+    \renewcommand{\@thischapterhead}{APPENDIX \Alph{chapter}}
 }
 
-\InputIfFileExists{NomenclatureAbbreviations.tex}{}{}
+% Define default chapter heading style
+\def\@thischapterhead{CHAPTER \arabic{chapter}}
+
+%%%%%%%%%%% Margin Setup - Chapter and Section Headings %%%%%%%%%%%%%%%
+
+% Chapter Heading Style (based on UTP Thesis guidelines - Malay comments translated)
+% 6.6.4 Page layout for the first page of each new chapter
+% a. Top margin: 28 mm from the top edge.
+% b. Right margin: 28 mm from the right edge.
+% c. Left margin: 38 mm from the left edge.
+% d. Bottom margin: 38 mm from the bottom edge.
+% e. The first page of each thesis/dissertation chapter should have 28 mm blank space above the title.
+
+\def\@makechapterhead#1{%
+    \thispagestyle{empty} % Suppress page number on chapter start page
+
+    {\parindent \z@ \centering
+        \begin{center}
+            \PrefaceFontSection{\@thischapterhead} % Chapter/Appendix heading in PrefaceFontSection style
+        \end{center}
+        \interlinepenalty\@M
+        \vskip 24pt  % Space after chapter heading (simulates 2 Enter presses)
+        \PrefaceFontSection{\uppercase{#1}} \par\nobreak % Chapter title in PrefaceFontSection style, uppercase
+        \vskip 36pt  % Space after chapter title (simulates 3 Enter presses)
+    }}
+
+% Appendix Chapter Heading Style
+\def\appendixchapter#1{%
+    \clearpage
+    \refstepcounter{chapter}
+    \addcontentsline{toc}{chapter}{APPENDIX \Alph{chapter}: #1} % Add appendix chapter to TOC
+    \chapter*{\centering
+        \vspace*{-30mm}  % 28mm from the top margin adjustment
+        {\fontsize{14pt}{16pt}\selectfont\bfseries\MakeUppercase{Appendix \Alph{chapter}}} % "APPENDIX A" - 14pt bold, uppercase
+        \\
+        {\fontsize{11pt}{13pt}\selectfont\MakeUppercase{#1}} % Appendix title - 11pt, uppercase
+    }
+    \nobreak
+}
+
+% @startsection command definition notes:
+% \@startsection {NAME}{LEVEL}{INDENT}{BEFORESKIP}{AFTERSKIP}{STYLE}
+%            optional * [ALTHEADING]{HEADING}
+%    NAME       : e.g., 'subsection'
+%    LEVEL      : section depth (chapter=1, section = 2, etc.)
+%                 Section number printed if LEVEL <= secnumdepth counter.
+%    INDENT     : Heading indentation from left margin
+%    BEFORESKIP : Space above heading (absolute value). Negative value suppresses paragraph indent.
+%    AFTERSKIP  : Positive: space below heading, Negative: space to right for run-in heading.
+%    STYLE      : Commands to set heading style
+%  '*' omits numbering. '[ALTHEADING]' provides alternate heading for ToC/headers.
+
+%%% Section and Subsection Styling (11pt font)
+% Redefine \section to use 11pt bold font
+\renewcommand{\section}{%
+    \@startsection
+    {section}{1}{0pt}{36pt plus 6pt minus 6pt}%  BEFORESKIP
+    {6pt plus 1pt minus 1pt}{\bf\fontsize{11pt}{13pt}\selectfont}% STYLE (bold, 11pt, 13pt linespacing)
+}
+
+% Redefine \subsection to use 11pt bold font
+\renewcommand{\subsection}{%
+    \@startsection
+    {subsection}{2}{0pt}{36pt plus 6pt minus 6pt}% BEFORESKIP
+    {6pt plus 1pt minus 1pt}{\bf\fontsize{11pt}{13pt}\selectfont}% STYLE (bold, 11pt, 13pt linespacing)
+}
+
+% Appendix Section and Subsection Styling (normal size bold font)
+\newcommand{\appendixsection}{%
+    \@startsection
+    {section}{1}{0pt}{3ex plus .5ex minus .5ex}% BEFORESKIP
+    {1ex plus .1ex}{\bf\normalsize}% STYLE (bold, normalsize)
+}
+
+\newcommand{\appendixsubsection}{%
+    \@startsection
+    {subsection}{2}{0pt}{3ex plus .5ex minus .5ex}% BEFORESKIP
+    {1ex plus .1ex}{\bf\normalsize}% STYLE (bold, normalsize)
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Front Matter Commands - Declarations, Titles, Supervisors, etc.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Declaration, Acknowledgement, Title (Malay), Abstracts, Department, etc.
+\def\declarationLLM#1{\gdef\@declarationLLM{#1}} % Declaration text
+\def\penghargaan#1{\gdef\@penghargaan{#1}}         % Acknowledgement text
+%\def\TitleMalay#1{\gdef\@TitleMalay{#1}}           % Thesis title in Malay
+\def\abstractMalay#1{\gdef\@abstractMalay{#1}}     % Abstract in Malay
+\def\abstract#1{\gdef\@abstract{#1}}               % Abstract in English
+\def\dept#1{\gdef\@dept{#1}}                       % Department
+\def\hod#1{\gdef\@hod{#1}}                         % Head of Department
+\def\degree#1{\gdef\@degree{#1}}                   % Degree type
+\def\mainsupervisor#1{\gdef\@mainsupervisor{#1}\gdef\advis@r{Supervisor}} % Main supervisor
+\def\cosupervisora#1{\gdef\@cosupervisora{#1}\gdef\advis@r{Supervisor}}   % Co-supervisor A
+\def\cosupervisorb#1{\gdef\@cosupervisorb{#1}\gdef\advis@r{Supervisor}}   % Co-supervisor B
+\def\submitdate#1{\gdef\@submitdate{#1}}           % Submission date
+\def\copyrightyear#1{\gdef\@copyrightyear{#1}}     % Copyright year
+\def\authoraddress#1{\gdef\@authoraddress{#1}}     % Author's address
+\def\languagemajor#1{\gdef\@languagemajor{#1}}     % Language major (for dual language depts)
+\def\@language{babel}                               % Language package (default babel)
+\def\advis@r{Supervisor}                           % Default advisor title
+
+\def\matricno#1{\gdef\@matricno{#1}}          % Matric Number
+% \def\field#1{\gdef\@field{#1}}                % Field of Study
+% \def\vivadate#1{\gdef\@vivadate{#1}}          % Viva Date
+% \def\degreex#1{\gdef\@degreex{#1}}          % Viva Date
+% Default definitions for title, author, department, supervisors, dates
+\def\@title{}
+\def\@author{}
+\def\@dept{INDUSTRIAL PHYSICS}                     % Default department
+\def\@mainsupervisor{}
+\def\@firstreader{*}
+\def\@secondreader{*}
+\def\@cosupervisora{*}
+\def\@cosupervisorb{*}
+\def\@submitdate{\number\the\year}                  % Default submit date: current year
+\def\@copyrightyear{\number\the\year}                % Default copyright year: current year
+
+% Boolean flags for copyright, figures/tables pages, thesis copyright
+\newif\ifcopyright
+\newif\iffigurespage
+\newif\iftablespage
+\newif\ifthesiscopyright
+\copyrighttrue           % Enable copyright notice
+\thesiscopyrighttrue     % Enable thesis copyright
+\figurespagetrue        % Include list of figures
+\tablespagetrue         % Include list of tables
+
+% Define standard sub-title format (Degree and Department in uppercase)
+\def\@standardsub{
+    \uppercase\expandafter{\@degree}\\
+    \uppercase\expandafter{\@dept}}
+
+\let\@whichsub=\@standardsub % Set default sub-title to standard sub-title
+
+%%%%%
+%%%%%   THESES TITLEPAGE
+%%%%%
+
+% Command for title page font styling (18pt, 22pt linespacing, bold, uppercase)
+\newcommand{\TitlePageFont}[1]{\textbf{\fontsize{18}{22}\selectfont\uppercase{#1}}}
+
+% Title page definition
+\def\titlepage{%
+    \thispagestyle{empty}% No page numbers on title page
+    \vspace*{23mm}% 60 mm from top of page (adjusted due to layout quirks)
+    \begin{center}
+
+        % Title block
+        \TitlePageFont{\@title}% Thesis title
+        \vfill % Vertical space
+
+        % Author block
+        \TitlePageFont{\@author}% Author name
+        \vfill % Vertical space
+        \TitlePageFont{THIS REPORT IS SUBMITTED IN FULFILMENT OF THE REQUIREMENT FOR THE}\\[0.5ex]
+        \TitlePageFont{BACHELOR’S DEGREE IN SCIENCE WITH HONORS} % Degree requirement statement
+        \vfill % Vertical space
+
+        % Faculty and University block
+        \TitlePageFont{FACULTY OF SCIENCE AND TECHNOLOGY}\\[0.5ex]
+        \TitlePageFont{UNIVERSITI MALAYSIA SABAH} \\[1ex]% University name
+        % Submission date block (at bottom, 60 mm from bottom edge due to \vspace*)
+        \vfill
+        \TitlePageFont{\@submitdate}% Submission date
+        
+    \end{center}
+    \vspace*{26mm}% 60 mm from last line to bottom of page (adjusted)
+    \newpage
+}
+
+%%%%%
+%%%%%   STATUS OF THESES - BORANG PENGESAHAN STATUS TESIS (Malay)
+%%%%%
+
+% Thesis Status Confirmation Page (Malay)
+\def\pengesahantesis{%
+    \setlength{\parindent}{0pt} % No paragraph indentation for this page
+    \thispagestyle{empty}% No page numbers
+
+    \begin{center}
+        \fontsize{11}{13}\selectfont % 11pt font size with 13pt linespacing
+        \textbf{UNIVERSITI MALAYSIA SABAH} \\ % University name in bold
+        BORANG PENGESAHAN STATUS TESIS         % Page title in Malay
+    \end{center}
+    \begin{flushleft}
+        \raisebox{0.5\parskip}{Judul Tesis} \hspace{0.5cm}\framebox[11.5cm]{\parbox[c]{11cm}{%
+            \uppercase\expandafter{\@title}}} \par % Thesis title in uppercase, framed
+
+        Saya \rlap{\rule[-0.5mm]{0.98\textwidth}{.4pt}\hss}\hskip4cm \uppercase\expandafter{\@author} % Author name with rule above
+
+        \vskip 0.10in
+
+        {\setlength{\baselineskip}{0.7\baselineskip}
+            mengaku membenarkan laporan ini disimpan di Perpustakaan Universiti Malaysia Sabah dengan syarat-syarat kegunaan seperti berikut: \par} % Declaration text
+
+        {\setlength{\baselineskip}{0.3\baselineskip}
+            \begin{enumerate}
+                \item  Tesis ini adalah hak milik Universiti Malaysia Sabah. % Item 1
+                \item  Perpustakaan Universiti Malaysia Sabah dibenarkan membuat salinan untuk tujuan pengajian sahaja. % Item 2
+                \item  Perpustakaan dibenarkan membuat salinan tesis ini sebagai bahan pertukaran antara institusi pengajian tinggi. % Item 3
+                \item  Sila tandakan ( / ) % Item 4 intro
+                \begin{description}
+                    \item \framebox[1cm]{\raisebox{0.3cm}{}} Sulit \hspace{1.5cm}
+                    \parbox[t]{0.7\linewidth}{Mengandungi maklumat yang berdarjah keselamatan atau kepentingan Malaysia seperti yang termaktub di dalam AKTA RAHSIA 1972} % Sulit option
+
+                    \item \framebox[1cm]{\raisebox{0.3cm}{}} Terhad \hspace{1.1cm}
+                    \parbox[t]{0.7\linewidth}{Mengandungi maklumat TERHAD yang telah ditentukan oleh organisasi/badan di mana penyelidikan dijalankan} % Terhad option
+
+                    \item \framebox[1cm]{\raisebox{0.3cm}{}} Tidak Terhad % Tidak Terhad option
+                \end{description}
+            \end{enumerate} \par}
+
+        {\setlength{\baselineskip}{0.7\baselineskip}
+            \par}
+
+        \vskip0.4cm
+        \begin{tabular}{@{\vspace{-2mm}}l @{\vspace{-2mm}}l}
+            \hfill                           & Disahkan Oleh:                           \\ % "Verified By"
+            \authorsignature                 & \raisebox{6.8mm}{\pustakawansignaturepengesahan}\\ % Author signature & 
+            Tarikh:                 & \raisebox{2mm}{\supervisorsignaturepengesahan}\\ % Author signature & Supervisor signature
+        \end{tabular}\\
+        \setlength{\parindent}{\myparagraphindent} % Reset paragraph indent
+        \vfill
+    \end{flushleft}
+    \newpage
+}
+%%% --------------- Certification Page - Approval by Supervisor(s)
+% if a co-supervisor is not available, no row will be displayed for them
+%        |                          |        |        | Signature
+% 1      | MAIN SUPERVISOR          |        |        |
+%        | Dr. Smith                |        |        | ___________
+\RequirePackage{tabularx} % Ensures tables auto-adjust width
+\RequirePackage{array}    % Improves table column formatting
+\def\approvalpage{%
+    \thispagestyle{empty}% No page numbers
+    \null\vskip0.7in% Top vertical space
+    \begin{center}
+        \textbf{CERTIFICATION}\\ % Page title: CERTIFICATION
+        
+        \vskip 0.05in
+
+    \end{center}
+    \begin{tabularx}{\textwidth}{p{2cm} p{0.2cm} p{0.75\textwidth}} 
+    NAME & : & \textbf{\uppercase{\@author}} \\[0.5ex]
+    MATRIC NO  & : & \textbf{\uppercase{\@matricno}} \\[0.5ex]
+    TITLE & : & \textbf{\uppercase{\@title}} \\[0.5ex]
+    % DEGREE & : & \textbf{\uppercase{\@degreex} \\[0.5ex] % Cannot add degree in the table
+    
+    % FIELD & : & \textbf{\uppercase{\@field}} \\[0.5ex]
+    % VIVA DATE & : & \textbf{\uppercase{\@vivadate}} 
+\end{tabularx}
+
+     \begin{center}
+        \textbf{CERTIFIED BY}\\ % Page title: CERTIFICATION
+        
+        \vskip 0.05in
+
+    % \end{center}
+
+    \begin{center}
+
+
+        \vskip0.3in
+
+        \begin{tabular*}{7.5in}{ll}
+            Signature: &  \rule[-0.5mm]{4in}{.4pt}\\ % Signature line
+            Main Supervisor: & \rlap{\rule[-0.5mm]{4in}{.4pt}}\@mainsupervisor \vspace{2cm}\\ % Main supervisor signature & name
+            \if*\@cosupervisora \else % Co-supervisor A (conditional)
+                Signature: & \rule[-0.5mm]{4in}{.4pt} \\ % Signature line
+                Co-Supervisor: & \rlap{\rule[-0.5mm]{4in}{.4pt}}\@cosupervisora \vspace{2cm}\\ % Co-supervisor A signature & name
+            \fi
+            \if*\@cosupervisorb \else % Co-supervisor B (conditional)
+                Signature: & \rule[-0.5mm]{4in}{.4pt} \\ % Signature line
+                Co-Supervisor: & \rlap{\rule[-0.5mm]{4in}{.4pt}}\@cosupervisorb \vspace{2cm}\\ % Co-supervisor B signature & name
+            \fi
+            % Date: & \rule[-0.5mm]{4in}{.4pt} \\ % Date line
+        \end{tabular*}
+    \end{center}
+    \vfill
+    \newpage
+}
+
+
+%%%%%
+%%%%%  DECLARATION OF THESIS - Author's Declaration
+%%%%%
+
+\def\declarationpage{%
+    \thispagestyle{plain}  % Bottom-centered page number
+    \vspace*{-0.5 in}
+    \begin{center}
+        \textbf{DECLARATION OF THESIS} % Page title: DECLARATION OF THESIS
+    \end{center}
+    \vspace{0.5cm}
+    \begin{flushleft}
+        \raisebox{0.5\parskip}{Title of thesis} \hspace{0.5cm}\framebox[11.5cm]{\parbox[c]{11cm}{%
+            \uppercase\expandafter{\@title}}} \par % Thesis title framed
+        \vspace{1cm}
+        I \rlap{\rule[-0.5mm]{0.98\textwidth}{.4pt}\hss} \hspace{1in}\uppercase\expandafter{\@author}\end{flushleft} % Author name with rule above
+    \vskip 0.15in
+
+    {\setlength{\baselineskip}{0.8\baselineskip}
+        I hereby declare that the content of this thesis is my own work, except for quotations, equations, summaries, and references, which have been appropriately acknowledged. Additionally, if Generative Artificial Intelligence has been used, its application and purpose have been transparently disclosed in the disclosure section below  \par} % Declaration text
+
+    % Framed box for declaration text
+    \noindent
+    \framebox[\textwidth]{%
+        \parbox[c][11cm]{0.95\textwidth}{ % Fixed height for boxa
+            \centering
+            \@declarationLLM  % Insert declaration text from \declarationLLM command
+        }
+    }
+
+    \vskip 0.5cm
+
+    \noindent
+    \begin{minipage}{\linewidth}
+        \today \hfill \makebox[0pt][r]{\raisebox{0ex}{\authorsignature}} % Date and Author signature
+    \end{minipage}
+    \newpage
+}
+
+%%% --- Author Signature, Supervisor Signatures, Librarian Signature ------------
+
+\def\authorsignature{%
+    \begin{minipage}{3in}
+        \vspace{\signaturespace}
+        \shortstack[l]{\rule[-0.5mm]{2.5in}{.4pt}\\
+            \@author} \\ % Author name
+        Matric No: \@matricno\\ % Matric number label
+    \end{minipage}
+}
+
+\long\def\supervisorsignature{%
+    \begin{minipage}{3in}
+        \vspace{\signaturespace}
+        \shortstack[l]{\rule[-0.5mm]{2.5in}{.4pt}\\
+            Signature of Supervisor} \\ % "Signature of Supervisor"
+        \vspace{-6mm}\\
+        \shortstack[l]{Name of Supervisor: \vspace{9mm}\\
+            \rlap{\rule[-0.5mm]{2.5in}{.4pt}\hss} \@mainsupervisor}\\ % Supervisor name
+    \end{minipage}
+}
+
+\long\def\supervisorsignaturepengesahan{%
+    \begin{minipage}{3in}
+        \vspace{\signaturespace}
+        \shortstack[l]{\rule[-0.5mm]{2.5in}{.4pt}\\
+            (\@mainsupervisor)\\ % Supervisor name in parenthesis
+            Penyelia Utama} \\ % "Main Supervisor" (Malay)
+    \end{minipage}
+}
+
+
+\long\def\pustakawansignaturepengesahan{%
+    \begin{minipage}{3in}
+        \vspace{\signaturespace}
+        \shortstack[l]{\rule[-0.5mm]{2.5in}{.4pt}\\
+            (Tandatangan Pustakawan)}
+    \end{minipage}
+}
+
+\long\def\pustakawansignature{%
+    \begin{minipage}{3in}
+        \vspace{\signaturespace}
+        \shortstack[l]{\rule[-0.5mm]{2.5in}{.4pt}\\
+            Tandatangan Pustakawan} \\ % "Librarian Signature" (Malay)
+    \end{minipage}
+}
+
+
+\newlength{\signaturespace}
+\setlength{\signaturespace}{.5in} % Define length for signature vertical space
+
+\long\def\signature#1{%
+    \begin{flushright}
+        \begin{minipage}{5in}
+            \vspace{\signaturespace}
+            \hbox to 5in{\hfil\begin{tabular}{@{}l@{}}\vrule width 3in height
+                        0.4pt depth 0pt\\ #1\end{tabular}} % Signature line and name
+        \end{minipage}
+    \end{flushright}}
+
+
+%------------------------------
+% Abstract Page (English)
+%------------------------------
+
+\def\testabstract{%
+    \thispagestyle{plain}  % Bottom-centered page number
+    \vspace*{-0.3 in}
+    \begin{center}
+        \PrefaceFontSection{ABSTRACT}\\ % "ABSTRACT" heading
+    \end{center}
+    \noindent % Ensure no indentation at the start
+    \begin{justified} % Enforce left alignment (justification may depend on surrounding document)
+        \@abstract
+    \end{justified}
+    \vfill\newpage
+}
+
+%------------------------------
+% Abstract Page (Malay) - ABSTRAK
+%------------------------------
+
+\newcommand\AbstrakFont{\fontsize{14pt}{16pt}\selectfont\bfseries} % Font for "ABSTRAK" heading
+\newcommand\TitleMalayFont{\fontsize{11pt}{16pt}\selectfont\bfseries} % Font for Malay title
+
+\def\abstractMalayu{%
+    \thispagestyle{plain}  % Bottom-centered page number
+    \vspace*{-0.3 in}
+    \begin{center}
+        \AbstrakFont{ABSTRAK}\\%[1.5em]  % "ABSTRAK" heading
+        %\TitleMalayFont{\@TitleMalay} % Malay title
+    \end{center}
+    \begin{justified}
+        \fontsize{11pt}{14pt}\selectfont{\@abstractMalay} % Malay abstract text
+    \end{justified}
+    \vfill\newpage
+}
+
+%------------------------------
+% Acknowledgment Page - ACKNOWLEDGMENT
+%------------------------------
+\def\Acknowledgment{%
+    \thispagestyle{plain}  % Bottom-centered page number
+    \vspace*{-0.3 in}
+    \begin{center}
+        \PrefaceFontSection{ACKNOWLEDGMENT}\\ % "ACKNOWLEDGMENT" heading
+
+    \end{center}
+    \@penghargaan % Acknowledgement text
+    \vfill\newpage
+}
+
+%%%%%
+%%%%%   ACTUAL PAGE WRITING SEQUENCE (Front Matter)
+%%%%%
+
+\let\origdoublepage\cleardoublepage
+\newcommand{\clearemptydoublepage}{%
+    \clearpage
+    {\pagestyle{empty}\origdoublepage}% Empty page for double-sided documents
+}
+
+\def\beforepreface{
+    \clearpage
+    \pagenumbering{roman} % Roman page numbering for front matter
+    \pagestyle{plain}
+    \pagestyle{headings}
+
+    \titlepage          % PAGE 1: Title Page
+    %\addcontentsline{toc}{chapter}{TITLE} % Add Title Page to TOC
+
+    \pengesahantesis    % PAGE 2: Status Page (Pengesahan Status Tesis)
+    %\addcontentsline{toc}{chapter}{PENGESAHAN STATUS TESIS} % Add Status Page to TOC
+
+    \declarationpage     % PAGE 3: Declaration Page
+    \addcontentsline{toc}{chapter}{DECLARATION OF THESIS} % Add Declaration to TOC
+
+    % We skip this unless required
+    % \approvalpage       % PAGE 4: Approval Page (Certification)
+    % \addcontentsline{toc}{chapter}{APPROVAL PAGE} % Add Approval Page to TOC
+
+    \testabstract       % PAGE 5: Abstract (English)
+    \addcontentsline{toc}{chapter}{ABSTRACT} % Add Abstract (English) to TOC
+
+    \abstractMalayu     % PAGE 6: Abstract (Malay)
+    \addcontentsline{toc}{chapter}{ABSTRAK} % Add Abstract (Malay) to TOC
+
+    % \Acknowledgment     % PAGE 7: Acknowledgment Page
+    % \addcontentsline{toc}{chapter}{ACKNOWLEDGMENT} % Add Acknowledgment to TOC
+}
+
+%%%%%
+%%%%%   Table of Contents, List of Tables, List of Figures, Abbreviations
+%%%%%
+
+% Defining page header style for preface sections (like ToC, LoF, LoT)
+\def\prefacesection#1{%
+    \vspace*{1.1in}  % 28 mm space from the top
+    \chapter*{\centering\fontsize{14}{16}\selectfont\textbf{\uppercase{#1}}}% Chapter heading style for preface sections
+}
+
+%\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}} % Dots for chapter entries in ToC
+\renewcommand{\cftdot}{} % Remove dots globally
+\renewcommand{\cftchapfont}{\fontsize{11}{13.6}\selectfont\textbf}  % Bold chapter text in ToC
+\renewcommand{\cftchappagefont}{\normalsize} % Uppercase chapter page numbers in ToC
+\setlength{\cftbeforechapskip}{0ex} % No space before chapters in ToC
+\setlength{\cftbeforesecskip}{0ex}  % No space before sections in ToC
+\setlength{\cftbeforechapskip}{0ex} % Redundant, already set above
+
+\renewcommand{\cftfigname}{\figurename\space}
+\renewcommand\cftfigpresnum{{Figure~}}
+\setlength{\cftfignumwidth}{2.5cm}
+
+\renewcommand\cfttabpresnum{Table~}
+\setlength{\cfttabnumwidth}{2.5cm}
+
+
+\def\afterpreface{\newpage
+    \renewcommand{\cftchappresnum}{CHAPTER 
+ }\renewcommand{\cftchapnumwidth}{25mm} % "CHAPTER:" prefix for chapter numbers in ToC
+
+    \renewcommand\contentsname{\centering
+        \vspace*{-0.7in}  % Adjust vertical position of ToC title
+        \PrefaceFontSection{TABLE OF CONTENTS}} % "LIST OF CONTENTS" heading
+%\renewcommand{\cfttoctitlefont}{\hfill \fontsize{12}{14}\bfseries}
+    \pagestyle{plain} % Plain page style for ToC
+    \tableofcontents  % Generate Table of Contents
+    
+%%%%%   List of Figures
+
+    
+    \iffigurespage
+        \renewcommand\listfigurename{\PrefaceFontSection\centering\vspace*{-1in} \textbf{LIST OF FIGURES}} % "LIST OF FIGURES" heading
+        \clearpage
+        \phantomsection
+        \addcontentsline{toc}{chapter}{LIST OF FIGURES} % Add List of Figures to ToC
+        \listoffigures % Generate List of Figures
+    \fi
+
+%%%%%   List of Tables
+    \iftablespage
+        \renewcommand\listtablename{\PrefaceFontSection\centering\vspace*{-1.1in} \textbf{LIST OF TABLES}} % "LIST OF TABLES" heading
+        \clearpage
+        \phantomsection
+        \addcontentsline{toc}{chapter}{LIST OF TABLES} % Add List of Tables to ToC
+        \listoftables % Generate List of Tables
+    \fi
+
+    %%%%%   List of Abbreviations Page
+    % Include NomenclatureAbbreviations.tex file (for abbreviations list)
+    \newcommand{\NomenAndAbbr}{\input{./NomenclatureAbbreviations.tex}}
+    \NomenAndAbbr
+
+    \renewcommand{\subheading}{\chapter*{\vspace*{-1in}\subheadingname}} % Redefine subheading for abbreviations list
+    \renewcommand\subheadingname{\PrefaceFontSection\centering {LIST OF ABBREVIATIONS}} % "LIST OF ABBREVIATIONS" heading
+    \clearpage
+
+    \phantomsection
+    \addcontentsline{toc}{chapter}{LIST OF ABBREVIATIONS} % Add List of Abbreviations to ToC
+    \listofsubscripts % Generate List of Subscripts (if used by listofsymbols)
+    \listofsymbolss  % Generate List of Symbols/Abbreviations
+
+    \clearpage%\clearemptydoublepage
+    \pagenumbering{arabic} % Arabic page numbering for main content
+    \pagestyle{plain}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Line Numbers & Captions Setup
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\renewcommand\thelinenumber{\arabic{linenumber}} % Standard line numbering format
+
+% Line numbering can be enabled/disabled in the main .tex file using \linenumbers and \nolinenumbers
+
+% Caption settings for tables
+\captionsetup[table]{
+    font={bf, normalsize},    % Bold, normal size font for caption
+    labelsep=period,          % "Table X. Caption" format
+    justification=centering, % Center caption
+    aboveskip=10pt,           % Space above table
+    position=top             % Table caption position: top
+}
+\floatsetup[table]{capposition=top} % Redundant, already set in \captionsetup
+
+% Caption settings for figures
+\captionsetup[figure]{
+    font={bf, normalsize},    % Bold, normal size font for caption
+    labelsep=period,          % "Figure X. Caption" format
+    justification=justified, % Justified caption text
+    position=bottom          % Figure caption position: bottom
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Bibliography Setup (APA Style)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\DeclareLanguageMapping{english}{american-apa} % Language mapping for APA style
+
+% Load bibliography resource file (BibThesis.bib in the same directory)
+\addbibresource{BibThesis.bib}
+
+% Define custom bibliography heading style
+\defbibheading{mybibheading}[\bibname]{%
+    \centering
+    \fontsize{14pt}{16.8pt}\selectfont % 14pt font size, 1.2 line spacing
+    \textbf{#1} % Bold bibliography heading title (\bibname = "References")
+    \par
+    \vspace{\bibitemsep} % Vertical space after heading
+}
+
+% Bibliography font and spacing settings
+\renewcommand{\bibfont}{\normalfont\fontsize{11pt}{11pt}\selectfont} % 11pt font for bibliography entries
+\setlength\bibitemsep{1\baselineskip}   % Space between bibliography entries
+\setlength\bibhang{1.5em}               % Hanging indent for bibliography entries (APA style)
+
+% Command to print bibliography in APA style
+\newcommand{\bibliographyAPA}{%
+    \clearpage
+    \singlespacing % Single-spaced bibliography
+    \setstretch{1} % Ensure single spacing within bibliography
+    \smallskip
+    \printbibliography[heading=mybibheading, title=REFERENCES] % Print bibliography with custom heading
+    \addcontentsline{toc}{chapter}{REFERENCES} % Add bibliography to Table of Contents
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% End of fin.sty
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

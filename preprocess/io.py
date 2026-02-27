@@ -15,7 +15,7 @@ def load_pd_csv(path: str | Path | None) -> np.ndarray:
     if path is None:
         return np.array([])
     data = pd.read_csv(path, header=None).iloc[:, 0].to_numpy()
-    return data.astype(float)
+    return data.astype(np.float32)
 
 
 def load_pd_hdf5(path: str | Path | None) -> np.ndarray:
@@ -25,7 +25,7 @@ def load_pd_hdf5(path: str | Path | None) -> np.ndarray:
     with h5py.File(path, "r") as fh:
         key = list(fh.keys())[0]
         data = np.asarray(fh[key])
-    return data.astype(float).ravel()
+    return data.astype(np.float32).ravel()
 
 
 def load_pd_npy(path: str | Path | None) -> np.ndarray:
@@ -33,4 +33,4 @@ def load_pd_npy(path: str | Path | None) -> np.ndarray:
     if path is None:
         return np.array([])
     data = np.load(path)
-    return data.astype(float).ravel()
+    return data.astype(np.float32).ravel()

@@ -7,7 +7,7 @@
 # 1. Project‑wide paths & runtime options
 # -------------------------------------------------------------------
 project:
-  root_dir: "partial_discharge_project"         # Relocatable root folder
+  root_dir: "antigravity_results"         # Relocatable root folder
   raw_data_dir: "data/raw"                      # Raw PD sensor recordings
   processed_dir: "data/processed"               # Cleaned & windowed arrays
   features_dir: "outputs/features"              # Per‑window features & master Parquet
@@ -22,12 +22,12 @@ project:
 # -------------------------------------------------------------------
 datasets:
   # Add additional datasets here to benchmark generalisation.
-  - path: iris                                    # Built‑in scikit‑learn Iris dataset
-    label_mapping: {}                             # Optional remap of class labels
-  - path: wine                                    # Wine quality (multi‑class)
-    label_mapping: {}
-  - path: breast_cancer                           # Binary classification
-    label_mapping: {}
+  # - path: iris                                    # Built‑in scikit‑learn Iris dataset
+  #   label_mapping: {}                             # Optional remap of class labels
+  # - path: wine                                    # Wine quality (multi‑class)
+  #   label_mapping: {}
+  # - path: breast_cancer                           # Binary classification
+  #   label_mapping: {}
   - path: dataset/contactless_pd_detection       # Contactless PD signals
     label_mapping: {}
 
@@ -40,7 +40,7 @@ preprocessing_options:
   augment:        [false, true]                   # Synthetic time‑warp / jitter
   wavelet_feats:  [false, true]                   # Add wavelet‑based features in Phase 1
   window_length_ms: 5                             # Segmentation length (ms)
-  bandpass_hz: [100000, 30000000]                 # 100 kHz – 30 MHz band‑pass
+  bandpass_hz: [100000, 15000000]                 # 100 kHz – 15 MHz band‑pass
 
 # -------------------------------------------------------------------
 # 4. Feature extraction catalogue (Phase 1)
@@ -92,11 +92,11 @@ scaling_methods:           # Feature scaling / normalisation
   - none                   # No scaling (tree models)
 
 feature_selections:        # Dimensionality reduction / subset selection
-  - null                   # All features
+  # - null                   # All features
   - featurewiz             # SULOV + XGB importance
-  - boruta
-  - rfe                    # Recursive feature elimination
-  - mrmr                   # Minimum‑redundancy‑maximum‑relevance
+  # - boruta
+  # - rfe                    # Recursive feature elimination
+  # - mrmr                   # Minimum‑redundancy‑maximum‑relevance
 
 model_types:               # Model zoo
   - RandomForest
@@ -150,3 +150,4 @@ runtime:
   save_confusion_matrices: true
   save_roc_curves: true
   model_registry_format: onnx      # Export best model per experiment
+

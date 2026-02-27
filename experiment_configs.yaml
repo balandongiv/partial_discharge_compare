@@ -1,0 +1,61 @@
+experiments:
+
+  Exp0_Baseline:
+    description: "All features, no combination/selection"
+    steps:
+      data_ingestion_preprocessing:
+        load: "Raw time-series PD signals (.npy)"
+        operations:
+          - "Standard denoising"
+          - "Normalization"
+      feature_engineering:
+        methods:
+          - "Classic stats: RMS, kurtosis, skew, crest-factor"
+          - "Time–frequency: FFT bands, STFT"
+          - "Wavelet-based: CWT, wavelet energy"
+          - "Multiscale entropy"
+          - "Fractal dimension"
+          - "Featuretools Deep Feature Synthesis"
+          - "Scalogram image representations"
+      feature_combination_expansion: "None (raw features only)"
+      feature_selection_track:
+        track_id: "4A"
+        method: "Baseline (all features passed to classifier)"
+
+  Exp1_Featurewiz:
+    description: "Featurewiz selection with expanded features"
+    steps:
+      data_ingestion_preprocessing:
+        load: ".npy"
+        operations:
+          - "Standard denoising"
+          - "Normalization"
+      feature_engineering:
+        methods: "Same as baseline (all features enabled)"
+      feature_combination_expansion:
+        methods:
+          - "Pairwise math ops (+, −, ×, ÷, |Δ|)"
+          - "PolynomialFeatures (interaction-only)"
+          - "feature-engine MathematicalCombination"
+      feature_selection_track:
+        track_id: "4B"
+        method: "Featurewiz (correlation pruning + XGBoost selector)"
+
+  Exp2_MLJAR:
+    description: "AutoML-based MLJAR-supervised selector"
+    steps:
+      data_ingestion_preprocessing:
+        load: ".npy"
+        operations:
+          - "Standard denoising"
+          - "Normalization"
+      feature_engineering:
+        methods: "Same as baseline (all features enabled)"
+      feature_combination_expansion:
+        methods:
+          - "Pairwise math ops"
+          - "PolynomialFeatures"
+          - "feature-engine MathematicalCombination"
+      feature_selection_track:
+        track_id: "4C"
+        method: "MLJAR-supervised (internal selector + AutoML leaderboard)"

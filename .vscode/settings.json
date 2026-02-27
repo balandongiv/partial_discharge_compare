@@ -1,0 +1,40 @@
+{
+  "editor.wordWrap": "on",
+  "editor.wordWrapColumn": 100,
+  "editor.rulers": [
+    100
+  ],
+  "[python]": {
+    "editor.wordWrap": "on"
+  },
+  "[latex]": {
+    "editor.wordWrap": "on",
+    "editor.formatOnSave": false
+  },
+  "[tex]": {
+    "editor.wordWrap": "on"
+  },
+  "python.defaultInterpreterPath": "/usr/local/bin/python",
+  "python.analysis.typeCheckingMode": "basic",
+  "latex-workshop.view.pdf.viewer": "tab",
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "latex-workshop.latex.outDir": "%DIR%/out",
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "Build Script (writing/build.sh)",
+      "tools": [
+        "custom_build_script"
+      ]
+    }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "name": "custom_build_script",
+      "command": "bash",
+      "args": [
+        "%DIR%/build.sh"
+      ],
+      "env": {}
+    }
+  ]
+}

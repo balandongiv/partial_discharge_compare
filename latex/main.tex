@@ -1,0 +1,85 @@
+% \documentclass[
+% % hidelinks, 
+% a4paper,
+% 11pt
+% ,oneside
+% ]{report} % Please disable the twocolumn later
+
+
+% \usepackage{font/fin} %<- Contains all formatting stuff that require by UMS! 
+
+% % Start graphic package
+% \usepackage{graphicx}
+% \usepackage{booktabs}
+% \newcommand{\plus}{\raisebox{.4\height}{\scalebox{.6}{+}}}
+% %\graphicspath{ {./images/} }}
+% \usepackage{array}
+% \usepackage{longtable}
+% \usepackage[english]{babel}
+% \usepackage{geometry}
+% \geometry{a4paper, margin=1in}
+% \usepackage{booktabs}
+% \usepackage{ragged2e}
+% \usepackage{pdflscape}
+% \usepackage{caption}
+
+\documentclass[
+% hidelinks, 
+a4paper,
+11pt
+,oneside
+]{report} % Please disable the twocolumn later
+\usepackage{font/fin} %<- Contains all formatting stuff that require by UMS!
+\usepackage{amsmath}
+\usepackage{graphicx}
+% \usepackage{cite}
+% \usepackage{apacite}
+% \usepackage{natbib}
+\usepackage{pdflscape} % For landscape pages
+% \usepackage{graphicx}  % Needed for proper PDF output
+\usepackage{float}     % Enables [H] float specifier used in chap4/chap5 tables/figures
+% \usepackage[utf8]{inputenc} % Not needed with XeLaTeX - XeLaTeX handles UTF-8 by default
+\usepackage{longtable}
+% \usepackage{array} % Already loaded in fin.sty
+% \usepackage{booktabs} % Already loaded in fin.sty
+\usepackage{rotating}
+% \usepackage{geometry} % Already loaded in fin.sty
+% \usepackage{cite}
+% hidelinks, 
+% a4paper,
+% 11pt
+% ,oneside
+% ]{report} % Please disable the twocolumn later
+
+
+ 
+
+% Start graphic package
+% \usepackage{graphicx} % Already loaded above
+% \usepackage{booktabs} % Already loaded in fin.sty
+\newcommand{\plus}{\raisebox{.4\height}{\scalebox{.6}{+}}}
+\graphicspath{ {./images/} }
+
+
+\hyphenation{applicability}
+
+
+\hyphenation{applicability}
+
+
+\begin{document}
+
+\include{frontpage}   % or \input{frontpage}
+\beforepreface
+\afterpreface
+
+\include{chap1}
+\include{chap2}
+\include{chap3}
+\include{chap4}
+\include{chap5}
+\include{chap6}
+
+\bibliographyAPA
+
+\end{document}

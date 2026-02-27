@@ -1,0 +1,132 @@
+\chapter{METHODOLOGY}
+
+This chapter describes the methodological steps used to investigate partial discharge (\ac{PD}) signal classification. It presents the complete research workflow, including dataset acquisition and organization, signal preprocessing, feature engineering and expansion, feature selection, model training, and performance evaluation. In this study, \ac{PD} identification is formulated as a multi-class classification task, where each class corresponds to a \ac{PD} signal category defined by expert annotations and galvanic reference measurements provided with the field dataset.
+
+\section{Overview of the Methodological Workflow}
+
+The study follows a structured processing pipeline beginning with dataset ingestion and organization, followed by preprocessing and signal conditioning. Feature engineering is then performed through base feature extraction and feature expansion. Subsequently, feature selection is conducted using two parallel selection tracks. Supervised machine learning models are trained using stratified cross-validation, and model performance is evaluated using standardized classification metrics. Each stage of the workflow is described in detail in the following sections, covering the dataset, preprocessing, feature engineering, feature selection, model training, and performance evaluation.
+
+\section{Datasets}
+
+This study utilizes a publicly available dataset obtained from long-term online monitoring of medium-voltage (\ac{MV}) overhead power lines. The data were collected using a contactless antenna-based measurement technique designed to capture electromagnetic emissions associated with partial discharge activity in \ac{XLPE}-covered conductors installed on \ac{MV} overhead transmission lines \parencite{Klein_2024_1}. Antenna-based \ac{PD} monitoring is a non-invasive radiometric approach that enables remote signal acquisition without direct electrical connection to high-voltage components \parencite{Cruz_2023, Azam_2024}.
+
+The dataset spans nearly three years of continuous measurements sampled at one-hour intervals from nine monitoring stations located in Czechia and Slovakia. Each data sample consists of a 20~ms time-domain waveform recorded at a sampling frequency of 1~MHz. Station identifiers and measurement identifiers are used to organize the data and to associate each waveform with its corresponding label provided in the annotation file.
+
+\section{Data Preprocessing and Signal Conditioning}
+
+Preprocessing converts raw waveforms into a standardized form suitable for feature computation and supervised learning. The preprocessing pipeline consists of dataset discovery, bandpass filtering, normalization, and label assignment, and is applied uniformly to all signals prior to feature extraction.
+
+\subsection{Signal Acquisition and Discovery}
+
+All measurement stations are automatically discovered from the dataset directory structure. Each station directory follows the naming pattern \texttt{station\_<ID>} and contains raw waveform files stored in NumPy array format (\texttt{.npy}). The preprocessing pipeline iterates through all station directories and loads each waveform sequentially in order to support large-scale processing without exceeding memory constraints.
+
+\subsection{Bandpass Filtering}
+
+Each waveform is filtered using a fourth-order Butterworth bandpass filter to retain the frequency range of interest while suppressing out-of-band components. Filtering is implemented using a forward--backward zero-phase approach through the \texttt{filtfilt} routine \parencite{Sun_2019_1}. The sampling frequency is set to 1~MHz, with a lower cutoff frequency of 1~kHz and an upper cutoff frequency of 450~kHz, corresponding to 45\% of the Nyquist frequency.
+
+\subsection{Normalization}
+
+After filtering, each signal is standardized using z-score normalization according to
+\begin{equation}
+x_{\mathrm{normalized}} = \frac{x - \mu}{\sigma},
+\end{equation}
+where $\mu$ and $\sigma$ denote the sample mean and standard deviation, respectively. For constant-valued signals where $\sigma = 0$, the standard deviation is set to 1.0 to avoid division by zero. All normalized waveforms are stored using 32-bit floating-point representation to reduce memory usage while maintaining numerical precision.
+
+\subsection{Metadata Integration and Label Assignment}
+
+For each processed waveform, metadata including station identifier, measurement identifier, signal length, and file path are recorded. Class labels are assigned by matching each waveform to the expert annotation table \texttt{inferred\_annotation.csv} using the station and measurement identifiers as keys. If no matching annotation is found, the waveform is assigned the label \texttt{unknown}. Metadata and labels are stored in Parquet format, while the processed waveforms are saved as individual \texttt{.npy} files for subsequent feature extraction.
+
+\section{Feature Engineering}
+
+Feature engineering transforms each preprocessed waveform into a numerical representation suitable for supervised classification. The feature engineering pipeline consists of two stages: base feature extraction and feature expansion. All features are computed from the complete 20~ms waveform without applying additional segmentation or windowing.
+
+\subsection{Base Feature Extraction from Cleaned Data}
+
+Each preprocessed waveform is loaded from its stored \texttt{.npy} file and processed sequentially. Given a one-dimensional normalized and bandpass-filtered signal sampled at 1~MHz, a feature vector is computed for each waveform. The resulting feature vectors are aggregated into a feature matrix, where each row corresponds to a waveform and each column corresponds to a feature. Station identifiers, measurement identifiers, and class labels are preserved alongside the feature matrix to maintain traceability.
+
+\subsection{Base Feature Types}
+
+A total of 23 base features are computed across multiple domains, including time-domain statistics, frequency-domain descriptors, time--frequency descriptors, entropy measures, a fractal dimension estimate, and phase-resolved partial discharge (\ac{PRPD}) summary features.
+
+\subsubsection{Time-Domain Features}
+
+Time-domain features are computed directly from the waveform samples $\{x_i\}_{i=1}^{N}$. The root mean square value is calculated as
+\[
+\mathrm{RMS} = \sqrt{\frac{1}{N}\sum_{i=1}^{N} x_i^2}.
+\]
+Skewness and kurtosis are computed using unbiased estimators implemented through the \texttt{scipy.stats} library, with NaN values replaced by zero. The crest factor is calculated as the ratio of the maximum absolute amplitude to the RMS value, with the denominator set to 1.0 when the RMS value is zero. The signal variance is computed as
+\[
+\mathrm{var} = \frac{1}{N}\sum_{i=1}^{N} (x_i - \mu)^2.
+\]
+
+\subsubsection{Frequency-Domain Features}
+
+Frequency-domain features are derived from the magnitude spectrum obtained using the real-valued fast Fourier transform (\texttt{np.fft.rfft}). The mean FFT magnitude is computed as the average magnitude across all frequency bins, while the maximum FFT magnitude corresponds to the largest spectral component.
+
+\subsubsection{Time--Frequency Features}
+
+Time--frequency features are computed using the short-time Fourier transform implemented via \texttt{scipy.signal.stft}. The segment length is adaptively selected as the minimum of 256 and the maximum of 8 and the signal length. The mean and maximum magnitudes across the resulting time--frequency representation are retained as features.
+
+\subsubsection{Entropy Features}
+
+Entropy-based features are computed to summarize signal distributions. Shannon entropy is calculated from a discretized amplitude histogram with 64 bins and density normalization, including a small regularization term to avoid numerical instability. Spectral entropy is computed using the normalized FFT magnitude spectrum and the same entropy formulation.
+
+\subsubsection{Fractal Dimension}
+
+The Higuchi fractal dimension is computed using a maximum scale parameter of $k_{\max}=5$. The fractal dimension is estimated from the slope of the linear regression between $\log(1/k)$ and $\log(\langle L(k)\rangle)$, where $\langle L(k)\rangle$ denotes the average curve length computed at scale $k$.
+
+\subsubsection{\ac{PRPD} Features}
+
+Phase-resolved partial discharge features are computed by mapping waveform samples to phase angles assuming a mains frequency of 50~Hz according to
+\[
+\phi = \left(\frac{t}{f_s}\right)\times 50 \times 2\pi \bmod 2\pi.
+\]
+The phase cycle is divided into four equal quadrants. For each quadrant, the mean absolute amplitude and sample density are computed. Additional \ac{PRPD} summary features include the polarity ratio between positive and negative samples, the peak absolute amplitude, and the normalized signal energy.
+
+\subsection{Feature Expansion}
+
+Following base feature extraction, additional derived features are generated through mathematical combinations of feature pairs. Prior to expansion, metadata columns are removed so that only numerical features are processed. Feature expansion includes pairwise arithmetic combinations, second-degree interaction terms generated using scikit-learn polynomial feature transformations, and additional mathematical combinations computed using the \texttt{feature-engine} library. Duplicate features are removed after expansion, and the final feature matrix is formed by concatenating the base and derived features.
+
+\section{Feature Selection}
+
+Two parallel feature selection tracks are implemented to produce reduced feature sets for model training. Each track outputs the selected feature names and associated metadata, which are stored in JSON format for reproducibility.
+
+\subsection{Track 4B: Featurewiz}
+
+The first feature selection track applies the Featurewiz library. Correlation-based pruning is first performed using the SULOV procedure with a correlation threshold of 0.7. XGBoost-based feature importance ranking is then applied to the remaining features to obtain a reduced feature subset. If Featurewiz is unavailable or fails at runtime, a variance-based filter is applied as a fallback.
+
+\subsection{Track 4C: MLJAR AutoML}
+
+The second feature selection track uses MLJAR-supervised AutoML with feature selection enabled. The AutoML process operates in \texttt{Explain} mode with a total time limit of 600 seconds and a per-model time limit of 120 seconds. Feature selection is integrated into the internal cross-validation procedure, and the selected features are extracted from the best-performing AutoML model.
+
+\section{Model Training and Cross-Validation}
+
+Machine learning models are trained separately for each feature selection track using stratified cross-validation. All training outputs, including fold-level predictions and probability estimates, are retained for evaluation.
+
+\subsection{Data Preparation}
+
+For each track, the selected feature list is used to subset the feature matrix. Metadata columns are separated from numerical features, and the feature matrix is converted to 32-bit floating-point format. Target labels are encoded using scikit-learn \texttt{LabelEncoder}.
+
+\subsection{Cross-Validation Strategy}
+
+Stratified k-fold cross-validation is employed to preserve class proportions across folds. The number of folds is determined by the minimum class count, with a maximum of 10 folds and a minimum of 5 folds when feasible. When the minimum class count is less than two, a single stratified shuffle split is used with a 70/30 training-validation split. All splitters use a fixed random seed for reproducibility.
+
+\subsection{Model Specifications}
+
+Five supervised classifiers are trained: a support vector machine with an RBF kernel, a random forest classifier, a decision tree classifier, a k-nearest neighbors classifier, and an artificial neural network implemented using a multilayer perceptron architecture. All models are configured using fixed hyperparameters and a consistent random seed.
+
+\subsection{Training Procedure}
+
+For each classifier and cross-validation fold, a new model instance is trained using the training partition and evaluated on the validation partition. Predictions and class probabilities are recorded for each fold. Performance metrics are computed at the fold level and aggregated by calculating the mean and standard deviation across folds. A final model for each classifier is trained using the full dataset and stored together with its associated metadata.
+
+\section{Performance Evaluation and Reporting}
+
+Model performance is evaluated using cross-validation outputs for each feature selection track. Summary metrics and visual diagnostics are generated to support comparative analysis.
+
+\subsection{Evaluation Metrics}
+
+Accuracy, precision, recall, \ac{F1}-score, and \ac{ROC}-\ac{AUC} are computed using macro-averaging. For multi-class evaluation, the one-vs-rest strategy is used for \ac{ROC}-\ac{AUC} computation. For each metric, the mean and standard deviation across cross-validation folds are reported.
+
+\subsection{Visualization and Reporting}
+
+Evaluation outputs include confusion matrices, multi-class \ac{ROC} curves, and comparative charts of \ac{F1}-scores across models. All metrics, predictions, and visualizations are stored in track-specific directories and saved in multiple formats, including Markdown, CSV, JSON, and Parquet, to support reproducibility and further analysis.

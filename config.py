@@ -77,6 +77,12 @@ class Config(BaseModel):
     datasets: List[DatasetConfig] = Field(default_factory=list)
     preprocessing_options: PreprocessingOptions
     features: FeatureCatalog
+    scaling_methods: List[str]
+    feature_selections: List[str]
+    model_types: List[str]
+    hyperparameter_tuning: Dict[str, Any]
+    cv_strategy: Dict[str, Any]
+    experiments: Dict[str, Any]
 
 
 CONFIG_PATH = Path(__file__).with_name("config.yaml")
